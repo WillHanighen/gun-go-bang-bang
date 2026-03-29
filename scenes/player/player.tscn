@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://dph2boca2phso"]
+
+[ext_resource type="Script" uid="uid://c3lom30dvtbo1" path="res://scripts/player/player_controller.gd" id="1"]
+[ext_resource type="Script" uid="uid://b7cgyxjkqollw" path="res://scripts/player/weapon_manager.gd" id="2"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+radius = 0.3
+height = 1.8
+
+[node name="Player" type="CharacterBody3D" unique_id=1155665388 groups=["player"]]
+collision_layer = 2
+script = ExtResource("1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=183723297]
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="Head" type="Node3D" parent="." unique_id=658671974]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Head" unique_id=1541799429]
+
+[node name="WeaponManager" type="Node" parent="." unique_id=1362318429]
+script = ExtResource("2")
