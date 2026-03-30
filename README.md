@@ -18,7 +18,7 @@ The entry scene is `res://scenes/range/shooting_range.tscn`.
 
 | Action | Default binding |
 |--------|-----------------|
-| Move | W A S D |
+| Move | WASD |
 | Jump | Space |
 | Sprint | Shift |
 | Fire | Left mouse |
