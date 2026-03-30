@@ -19,8 +19,12 @@ var current_spread: float = 0.0
 var _time_since_last_shot: float = 999.0
 var _burst_remaining: int = 0
 var _burst_timer: float = 0.0
+var _burst_volley_shot_index: int = 0
+var _burst_delayed_recoil_id: int = 0
 var _is_reloading: bool = false
 var _reload_timer: float = 0.0
+## Per-weapon-index snapshots so switching away keeps fire mode, ammo type, rounds, spread, reload progress.
+var _weapon_snapshots: Dictionary = {}
 
 var ammo_wheel_open := false
 var ammo_wheel_index := 0
@@ -55,21 +59,70 @@ func _process(delta: float) -> void:
 func equip_weapon(index: int) -> void:
 	if index < 0 or index >= weapons.size():
 		return
+	if index == current_weapon_index and current_weapon_data != null:
+		return
+	_persist_current_weapon_if_any()
 	current_weapon_index = index
 	current_weapon_data = weapons[index]
-	current_caliber_index = 0
-	current_fire_mode_index = 0
-	current_ammo = current_weapon_data.magazine_size
-	current_spread = current_weapon_data.base_spread
+	if _weapon_snapshots.has(index):
+		_restore_weapon_snapshot(_weapon_snapshots[index] as Dictionary)
+	else:
+		_apply_default_weapon_state()
 	_burst_remaining = 0
-	_is_reloading = false
+	_burst_volley_shot_index = 0
+	_burst_timer = 0.0
+	_burst_delayed_recoil_id += 1
 	ammo_wheel_open = false
 	_reload_key_held = false
 	weapon_changed.emit(current_weapon_data)
 	fire_mode_changed.emit(get_current_fire_mode())
 	ammo_changed.emit(current_ammo, current_weapon_data.magazine_size)
 	if current_weapon_data.calibers.size() > 0:
-		caliber_changed.emit(current_weapon_data.calibers[0])
+		caliber_changed.emit(get_current_caliber())
+
+
+func _snapshot_current_weapon() -> Dictionary:
+	return {
+		"fire_mode_index": current_fire_mode_index,
+		"caliber_index": current_caliber_index,
+		"ammo": current_ammo,
+		"spread": current_spread,
+		"is_reloading": _is_reloading,
+		"reload_timer": _reload_timer,
+	}
+
+
+func _persist_current_weapon_if_any() -> void:
+	if weapons.is_empty() or current_weapon_data == null:
+		return
+	_weapon_snapshots[current_weapon_index] = _snapshot_current_weapon()
+
+
+func _apply_default_weapon_state() -> void:
+	current_caliber_index = 0
+	current_fire_mode_index = 0
+	current_ammo = current_weapon_data.magazine_size
+	current_spread = current_weapon_data.base_spread
+	_is_reloading = false
+	_reload_timer = 0.0
+
+
+func _restore_weapon_snapshot(s: Dictionary) -> void:
+	var w := current_weapon_data
+	if w.fire_modes.size() > 0:
+		current_fire_mode_index = clampi(int(s.get("fire_mode_index", 0)), 0, w.fire_modes.size() - 1)
+	else:
+		current_fire_mode_index = 0
+	if w.calibers.size() > 0:
+		current_caliber_index = clampi(int(s.get("caliber_index", 0)), 0, w.calibers.size() - 1)
+	else:
+		current_caliber_index = 0
+	current_ammo = clampi(int(s.get("ammo", w.magazine_size)), 0, w.magazine_size)
+	current_spread = clampf(float(s.get("spread", w.base_spread)), w.base_spread, w.max_spread)
+	_is_reloading = bool(s.get("is_reloading", false))
+	_reload_timer = maxf(float(s.get("reload_timer", 0.0)), 0.0)
+	if _is_reloading and _reload_timer <= 0.0:
+		_is_reloading = false
 
 
 func get_current_fire_mode() -> WeaponResource.FireMode:
@@ -226,6 +279,43 @@ func _update_wheel_selection() -> void:
 	ammo_wheel_index = int(adjusted / (TAU / float(count))) % count
 
 
+func _is_burst_compensation_active() -> bool:
+	if not current_weapon_data:
+		return false
+	if get_current_fire_mode() != WeaponResource.FireMode.BURST:
+		return false
+	if current_weapon_data.burst_compensation_shots <= 0:
+		return false
+	return _burst_volley_shot_index < current_weapon_data.burst_compensation_shots
+
+
+func _schedule_burst_delayed_recoil() -> void:
+	var w := current_weapon_data
+	if not w:
+		return
+	_burst_delayed_recoil_id += 1
+	var id := _burst_delayed_recoil_id
+	var delay := w.burst_delayed_recoil_delay_sec
+	var weapon_key := w.weapon_name
+	var t := get_tree().create_timer(delay)
+	t.timeout.connect(
+		func() -> void:
+			if not is_instance_valid(self) or not is_instance_valid(player):
+				return
+			if id != _burst_delayed_recoil_id:
+				return
+			if not current_weapon_data or current_weapon_data.weapon_name != weapon_key:
+				return
+			var v := w.get_effective_recoil_vertical()
+			var h_abs := w.get_effective_recoil_horizontal()
+			var st := w.burst_delayed_recoil_impulse_strength
+			var hf := w.burst_delayed_recoil_horizontal_factor
+			player.apply_recoil(2.0 * v * st, randf_range(-h_abs, h_abs) * 2.0 * st * hf)
+	,
+		Object.CONNECT_ONE_SHOT
+	)
+
+
 func _try_fire() -> void:
 	if not current_weapon_data or current_ammo <= 0:
 		return
@@ -238,6 +328,7 @@ func _try_fire() -> void:
 	if mode == WeaponResource.FireMode.BURST:
 		_burst_remaining = current_weapon_data.burst_count - 1
 		_burst_timer = 0.0
+		_burst_volley_shot_index = 0
 	_fire_single_round()
 
 
@@ -261,6 +352,11 @@ func _fire_single_round() -> void:
 	var effective_spread := current_spread * ads_mult * sprint_mult
 	var effective_pellet_spread := caliber.pellet_spread_deg * lerpf(1.0, 0.7, player._ads_progress)
 
+	var burst_pair_tight := _is_burst_compensation_active()
+	if burst_pair_tight:
+		effective_spread *= current_weapon_data.burst_compensation_spread_mult
+		effective_pellet_spread *= current_weapon_data.burst_compensation_spread_mult
+
 	var directions := Ballistics.calculate_spread_directions(
 		forward, up, caliber.pellet_count, effective_pellet_spread, effective_spread
 	)
@@ -272,15 +368,32 @@ func _fire_single_round() -> void:
 		-current_weapon_data.get_effective_recoil_horizontal(),
 		current_weapon_data.get_effective_recoil_horizontal()
 	)
+	if burst_pair_tight:
+		v_recoil *= current_weapon_data.burst_compensation_recoil_mult
+		h_recoil *= current_weapon_data.burst_compensation_recoil_mult
 	player.apply_recoil(v_recoil, h_recoil)
 
-	current_spread = minf(
-		current_spread + current_weapon_data.spread_increase_per_shot,
-		current_weapon_data.max_spread
-	)
+	var spread_add := current_weapon_data.spread_increase_per_shot
+	if burst_pair_tight:
+		spread_add *= current_weapon_data.burst_compensation_spread_mult
+	current_spread = minf(current_spread + spread_add, current_weapon_data.max_spread)
+
+	var schedule_delayed := false
+	if get_current_fire_mode() == WeaponResource.FireMode.BURST:
+		if (
+			current_weapon_data.burst_compensation_shots > 0
+			and current_weapon_data.burst_delayed_recoil_delay_sec > 0.0
+			and current_weapon_data.burst_delayed_recoil_impulse_strength > 0.0
+			and _burst_volley_shot_index == current_weapon_data.burst_count - 1
+		):
+			schedule_delayed = true
+		_burst_volley_shot_index += 1
 
 	ammo_changed.emit(current_ammo, current_weapon_data.magazine_size)
 	weapon_fired.emit(caliber, directions, origin)
+
+	if schedule_delayed:
+		_schedule_burst_delayed_recoil()
 
 
 func _perform_hitscan(origin: Vector3, directions: Array[Vector3], caliber: CaliberResource) -> void:

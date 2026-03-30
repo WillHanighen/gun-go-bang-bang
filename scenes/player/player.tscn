@@ -2,6 +2,11 @@
 
 [ext_resource type="Script" uid="uid://c3lom30dvtbo1" path="res://scripts/player/player_controller.gd" id="1"]
 [ext_resource type="Script" uid="uid://b7cgyxjkqollw" path="res://scripts/player/weapon_manager.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://bm45v21sau1oa" path="res://assets/Kriss Vector/kriss_vector 1k.glb" id="3"]
+[ext_resource type="PackedScene" uid="uid://ddsxirphldhfr" path="res://assets/M1911/m1911_handgun 1k.glb" id="4"]
+[ext_resource type="PackedScene" uid="uid://8jhj6je4pe2q" path="res://assets/M4A1/m4a1_rifle 1k.glb" id="5"]
+[ext_resource type="PackedScene" uid="uid://qwokljbxihue" path="res://assets/Remington 870/remington_870_shotgun 1k.glb" id="6"]
+[ext_resource type="Script" path="res://scripts/player/weapon_view.gd" id="7"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 radius = 0.3
@@ -18,6 +23,37 @@ shape = SubResource("CapsuleShape3D_1")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Head" unique_id=1541799429]
+
+[node name="WeaponView" type="Node3D" parent="Head/Camera3D"]
+script = ExtResource("7")
+
+[node name="Glock_45" type="Node3D" parent="Head/Camera3D/WeaponView"]
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0.15, -0.2, -0.45)
+visible = false
+
+[node name="M1911" type="Node3D" parent="Head/Camera3D/WeaponView"]
+transform = Transform3D(0, 0, 0.22, 0, 0.22, 0, -0.22, 0, 0, 0.2, -0.2, -0.42)
+visible = false
+
+[node name="M1911Model" parent="Head/Camera3D/WeaponView/M1911" instance=ExtResource("4")]
+
+[node name="KRISS_Vector" type="Node3D" parent="Head/Camera3D/WeaponView"]
+transform = Transform3D(0.72, 0, 0, 0, 0.72, 0, 0, 0, 0.72, 0.28, -0.22, -0.3)
+visible = false
+
+[node name="KrissVectorModel" parent="Head/Camera3D/WeaponView/KRISS_Vector" instance=ExtResource("3")]
+
+[node name="Remington_870" type="Node3D" parent="Head/Camera3D/WeaponView"]
+transform = Transform3D(0, 0, 0.38, 0, 0.38, 0, -0.38, 0, 0, 0.22, -0.2, -0.44)
+visible = false
+
+[node name="Remington870Model" parent="Head/Camera3D/WeaponView/Remington_870" instance=ExtResource("6")]
+
+[node name="M4A1" type="Node3D" parent="Head/Camera3D/WeaponView"]
+transform = Transform3D(-0.085, 0, 0, 0, 0.085, 0, 0, 0, -0.085, 0.14, -0.16, -0.55)
+visible = false
+
+[node name="M4A1Model" parent="Head/Camera3D/WeaponView/M4A1" instance=ExtResource("5")]
 
 [node name="WeaponManager" type="Node" parent="." unique_id=1362318429]
 script = ExtResource("2")

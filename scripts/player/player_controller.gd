@@ -11,6 +11,8 @@ const DEFAULT_FOV := 75.0
 const ADS_FOV := 50.0
 
 const RECOIL_RECOVERY_FRACTION := 0.55
+## Applied to kick from WeaponResource (degrees → camera). Tune global feel here.
+const RECOIL_IMPACT_MULT := 1.75
 
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
@@ -91,12 +93,14 @@ func _physics_process(delta: float) -> void:
 
 
 func apply_recoil(vertical_deg: float, horizontal_deg: float) -> void:
-	head.rotation.x += deg_to_rad(vertical_deg)
+	var v := vertical_deg * RECOIL_IMPACT_MULT
+	var h := horizontal_deg * RECOIL_IMPACT_MULT
+	head.rotation.x += deg_to_rad(v)
 	head.rotation.x = clampf(head.rotation.x, deg_to_rad(-89), deg_to_rad(89))
-	rotation.y += deg_to_rad(horizontal_deg)
+	rotation.y += deg_to_rad(h)
 
-	_recoil_v_recover += vertical_deg * RECOIL_RECOVERY_FRACTION
-	_recoil_h_recover += horizontal_deg * RECOIL_RECOVERY_FRACTION
+	_recoil_v_recover += v * RECOIL_RECOVERY_FRACTION
+	_recoil_h_recover += h * RECOIL_RECOVERY_FRACTION
 
 
 func _recover_recoil(delta: float) -> void:

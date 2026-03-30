@@ -21,8 +21,8 @@ static func register(calibers: Dictionary, out_weapons: Array[WeaponResource]) -
 	r870.spread_increase_per_shot = 0.0
 	r870.max_spread = 0.5
 	r870.spread_recovery_rate = 10.0
-	r870.recoil_vertical = 5.0
-	r870.recoil_horizontal_range = 1.0
+	r870.recoil_vertical = 7.5
+	r870.recoil_horizontal_range = 1.45
 	r870.recoil_recovery_rate = 4.0
 	r870.recoil_mitigation = 0.0
 	r870.ads_time = 0.35
