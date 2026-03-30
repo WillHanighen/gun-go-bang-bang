@@ -6,7 +6,9 @@
 [ext_resource type="PackedScene" uid="uid://ddsxirphldhfr" path="res://assets/M1911/m1911_handgun 1k.glb" id="4"]
 [ext_resource type="PackedScene" uid="uid://8jhj6je4pe2q" path="res://assets/M4A1/m4a1_rifle 1k.glb" id="5"]
 [ext_resource type="PackedScene" uid="uid://qwokljbxihue" path="res://assets/Remington 870/remington_870_shotgun 1k.glb" id="6"]
-[ext_resource type="Script" path="res://scripts/player/weapon_view.gd" id="7"]
+[ext_resource type="Script" uid="uid://bbcrm4sq23iv" path="res://scripts/player/weapon_view.gd" id="7"]
+[ext_resource type="PackedScene" uid="uid://jiwliu8bimt0" path="res://assets/Colt Python/colt_python 1k.glb" id="8"]
+[ext_resource type="PackedScene" uid="uid://dg0gqlrvjl2kp" path="res://assets/Mossberg 590/mossberg_590_mariner 1k.glb" id="9"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 radius = 0.3
@@ -24,36 +26,44 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Head" unique_id=1541799429]
 
-[node name="WeaponView" type="Node3D" parent="Head/Camera3D"]
+[node name="WeaponView" type="Node3D" parent="Head/Camera3D" unique_id=187935988]
 script = ExtResource("7")
 
-[node name="Glock_45" type="Node3D" parent="Head/Camera3D/WeaponView"]
-transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0.15, -0.2, -0.45)
+[node name="Colt_Python" type="Node3D" parent="Head/Camera3D/WeaponView" unique_id=1964103533]
+transform = Transform3D(-0.001, 0, -8.742278e-11, 0, 0.001, 0, 8.742278e-11, 0, -0.001, 0.3421172, -0.25255662, -0.46397367)
 visible = false
 
-[node name="M1911" type="Node3D" parent="Head/Camera3D/WeaponView"]
+[node name="ColtPythonModel" parent="Head/Camera3D/WeaponView/Colt_Python" unique_id=1394965520 instance=ExtResource("8")]
+
+[node name="M1911" type="Node3D" parent="Head/Camera3D/WeaponView" unique_id=688136754]
 transform = Transform3D(0, 0, 0.22, 0, 0.22, 0, -0.22, 0, 0, 0.2, -0.2, -0.42)
 visible = false
 
-[node name="M1911Model" parent="Head/Camera3D/WeaponView/M1911" instance=ExtResource("4")]
+[node name="M1911Model" parent="Head/Camera3D/WeaponView/M1911" unique_id=2085691929 instance=ExtResource("4")]
 
-[node name="KRISS_Vector" type="Node3D" parent="Head/Camera3D/WeaponView"]
+[node name="KRISS_Vector" type="Node3D" parent="Head/Camera3D/WeaponView" unique_id=973715326]
 transform = Transform3D(0.72, 0, 0, 0, 0.72, 0, 0, 0, 0.72, 0.28, -0.22, -0.3)
 visible = false
 
-[node name="KrissVectorModel" parent="Head/Camera3D/WeaponView/KRISS_Vector" instance=ExtResource("3")]
+[node name="KrissVectorModel" parent="Head/Camera3D/WeaponView/KRISS_Vector" unique_id=178154197 instance=ExtResource("3")]
 
-[node name="Remington_870" type="Node3D" parent="Head/Camera3D/WeaponView"]
+[node name="Remington_870" type="Node3D" parent="Head/Camera3D/WeaponView" unique_id=1207325146]
 transform = Transform3D(0, 0, 0.38, 0, 0.38, 0, -0.38, 0, 0, 0.22, -0.2, -0.44)
 visible = false
 
-[node name="Remington870Model" parent="Head/Camera3D/WeaponView/Remington_870" instance=ExtResource("6")]
+[node name="Remington870Model" parent="Head/Camera3D/WeaponView/Remington_870" unique_id=456611449 instance=ExtResource("6")]
 
-[node name="M4A1" type="Node3D" parent="Head/Camera3D/WeaponView"]
-transform = Transform3D(-0.085, 0, 0, 0, 0.085, 0, 0, 0, -0.085, 0.14, -0.16, -0.55)
+[node name="Mossberg_590" type="Node3D" parent="Head/Camera3D/WeaponView" unique_id=1824389399]
+transform = Transform3D(0.125, 0, 0, 0, 0.125, 0, 0, 0, 0.125, 0.2, -0.2, -0.45)
 visible = false
 
-[node name="M4A1Model" parent="Head/Camera3D/WeaponView/M4A1" instance=ExtResource("5")]
+[node name="Mossberg590Model" parent="Head/Camera3D/WeaponView/Mossberg_590" unique_id=102105526 instance=ExtResource("9")]
+
+[node name="M4A1" type="Node3D" parent="Head/Camera3D/WeaponView" unique_id=1800568725]
+transform = Transform3D(-0.045, 0, -6.7948114e-09, 0, 0.045, 0, 6.7948114e-09, 0, -0.045, 0.2844489, -0.16587222, -0.2868259)
+visible = false
+
+[node name="M4A1Model" parent="Head/Camera3D/WeaponView/M4A1" unique_id=311298919 instance=ExtResource("5")]
 
 [node name="WeaponManager" type="Node" parent="." unique_id=1362318429]
 script = ExtResource("2")

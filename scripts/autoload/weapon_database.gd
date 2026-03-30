@@ -11,6 +11,7 @@ func _ready() -> void:
 
 func _init_calibers() -> void:
 	AmmoPistolSmg.register(calibers)
+	AmmoRevolver.register(calibers)
 	AmmoRifle.register(calibers)
 	AmmoShotgun.register(calibers)
 
