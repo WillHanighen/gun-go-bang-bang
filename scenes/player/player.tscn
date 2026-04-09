@@ -14,12 +14,18 @@
 radius = 0.3
 height = 1.8
 
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_5gtgg"]
+
 [node name="Player" type="CharacterBody3D" unique_id=1155665388 groups=["player"]]
 collision_layer = 2
 script = ExtResource("1")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=183723297]
 shape = SubResource("CapsuleShape3D_1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=327328754]
+transform = Transform3D(0.6, 0, 0, 0, 0.9, 0, 0, 0, 0.6, 0, 0, 0)
+mesh = SubResource("CapsuleMesh_5gtgg")
 
 [node name="Head" type="Node3D" parent="." unique_id=658671974]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
