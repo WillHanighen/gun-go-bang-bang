@@ -23,6 +23,8 @@ var _burst_volley_shot_index: int = 0
 var _burst_delayed_recoil_id: int = 0
 var _is_reloading: bool = false
 var _reload_timer: float = 0.0
+## True while loading shells one at a time (per_shell_reload_time \> 0).
+var _reload_incremental: bool = false
 ## Per-weapon-index snapshots so switching away keeps fire mode, ammo type, rounds, spread, reload progress.
 var _weapon_snapshots: Dictionary = {}
 
@@ -33,6 +35,8 @@ var _reload_key_held := false
 var _reload_hold_time := 0.0
 const WHEEL_HOLD_THRESHOLD := 0.15
 const WHEEL_DEADZONE := 15.0
+## Consecutive empty fire clicks (LMB); second click starts reload.
+var _empty_dry_fire_streak := 0
 
 const MAX_DECALS := 200
 var _decals: Array[MeshInstance3D] = []
@@ -74,6 +78,7 @@ func equip_weapon(index: int) -> void:
 	_burst_delayed_recoil_id += 1
 	ammo_wheel_open = false
 	_reload_key_held = false
+	_empty_dry_fire_streak = 0
 	weapon_changed.emit(current_weapon_data)
 	fire_mode_changed.emit(get_current_fire_mode())
 	ammo_changed.emit(current_ammo, current_weapon_data.magazine_size)
@@ -89,6 +94,7 @@ func _snapshot_current_weapon() -> Dictionary:
 		"spread": current_spread,
 		"is_reloading": _is_reloading,
 		"reload_timer": _reload_timer,
+		"reload_incremental": _reload_incremental,
 	}
 
 
@@ -105,6 +111,8 @@ func _apply_default_weapon_state() -> void:
 	current_spread = current_weapon_data.base_spread
 	_is_reloading = false
 	_reload_timer = 0.0
+	_reload_incremental = false
+	_empty_dry_fire_streak = 0
 
 
 func _restore_weapon_snapshot(s: Dictionary) -> void:
@@ -121,8 +129,10 @@ func _restore_weapon_snapshot(s: Dictionary) -> void:
 	current_spread = clampf(float(s.get("spread", w.base_spread)), w.base_spread, w.max_spread)
 	_is_reloading = bool(s.get("is_reloading", false))
 	_reload_timer = maxf(float(s.get("reload_timer", 0.0)), 0.0)
+	_reload_incremental = bool(s.get("reload_incremental", false))
 	if _is_reloading and _reload_timer <= 0.0:
 		_is_reloading = false
+		_reload_incremental = false
 
 
 func get_current_fire_mode() -> WeaponResource.FireMode:
@@ -149,7 +159,9 @@ func cycle_ammo() -> void:
 		return
 	current_caliber_index = (current_caliber_index + 1) % current_weapon_data.calibers.size()
 	caliber_changed.emit(get_current_caliber())
+	_empty_dry_fire_streak = 0
 	_is_reloading = true
+	_reload_incremental = false
 	_reload_timer = current_weapon_data.reload_time
 	reload_started.emit()
 
@@ -159,8 +171,14 @@ func start_reload() -> void:
 		return
 	if current_ammo >= current_weapon_data.magazine_size:
 		return
+	_empty_dry_fire_streak = 0
 	_is_reloading = true
-	_reload_timer = current_weapon_data.reload_time
+	if current_weapon_data.per_shell_reload_time > 0.0:
+		_reload_incremental = true
+		_reload_timer = current_weapon_data.per_shell_reload_time
+	else:
+		_reload_incremental = false
+		_reload_timer = current_weapon_data.reload_time
 	reload_started.emit()
 
 
@@ -222,13 +240,38 @@ func _handle_input() -> void:
 	if Input.is_action_just_pressed("switch_ammo"):
 		cycle_ammo()
 
-	if _is_reloading or ammo_wheel_open:
+	if ammo_wheel_open:
 		return
 
 	if Input.is_action_just_pressed("fire"):
+		_try_cancel_shotgun_reload_for_fire()
+		if _is_reloading:
+			return
+		if current_weapon_data:
+			if current_ammo > 0:
+				_empty_dry_fire_streak = 0
+			else:
+				_empty_dry_fire_streak += 1
+				if _empty_dry_fire_streak >= 2:
+					_empty_dry_fire_streak = 0
+					start_reload()
+				return
 		_try_fire()
 	elif Input.is_action_pressed("fire") and get_current_fire_mode() == WeaponResource.FireMode.AUTO:
+		_try_cancel_shotgun_reload_for_fire()
+		if _is_reloading:
+			return
 		_try_fire()
+
+
+func _try_cancel_shotgun_reload_for_fire() -> void:
+	if not _is_reloading or not _reload_incremental:
+		return
+	if not current_weapon_data or current_weapon_data.per_shell_reload_time <= 0.0:
+		return
+	_is_reloading = false
+	_reload_incremental = false
+	ammo_changed.emit(current_ammo, current_weapon_data.magazine_size)
 
 
 func feed_wheel_mouse(delta: Vector2) -> void:
@@ -252,13 +295,17 @@ func _process_ammo_wheel(delta: float) -> void:
 		_reload_key_held = false
 		if ammo_wheel_open:
 			ammo_wheel_open = false
-			current_caliber_index = ammo_wheel_index
-			caliber_changed.emit(get_current_caliber())
-			_is_reloading = true
-			_reload_timer = current_weapon_data.reload_time
-			reload_started.emit()
+			if ammo_wheel_index != current_caliber_index:
+				current_caliber_index = ammo_wheel_index
+				caliber_changed.emit(get_current_caliber())
+				_empty_dry_fire_streak = 0
+				_is_reloading = true
+				_reload_incremental = false
+				_reload_timer = current_weapon_data.reload_time
+				reload_started.emit()
 		elif _is_reloading:
 			_is_reloading = false
+			_reload_incremental = false
 			ammo_changed.emit(current_ammo, current_weapon_data.magazine_size)
 		else:
 			start_reload()
@@ -348,9 +395,21 @@ func _fire_single_round() -> void:
 	var up := cam.global_basis.y
 
 	var ads_mult := lerpf(1.0, 0.35, player._ads_progress)
-	var sprint_mult := lerpf(1.0, 2.5, player._sprint_spread)
-	var effective_spread := current_spread * ads_mult * sprint_mult
-	var effective_pellet_spread := caliber.pellet_spread_deg * lerpf(1.0, 0.7, player._ads_progress)
+	var walk_mult := lerpf(1.0, player.MOVE_SPREAD_WALK_MAX, player._walk_spread)
+	var sprint_mult := lerpf(1.0, player.MOVE_SPREAD_SPRINT_MAX, player._sprint_spread)
+	var air_mult := lerpf(1.0, 2.35, player._air_spread)
+	var crouch_mult := lerpf(1.0, 0.88, player._crouch_progress)
+	var effective_spread := (
+		current_spread * ads_mult * walk_mult * sprint_mult * air_mult * crouch_mult
+	)
+	var effective_pellet_spread := (
+		caliber.pellet_spread_deg
+		* lerpf(1.0, 0.7, player._ads_progress)
+		* air_mult
+		* crouch_mult
+		* walk_mult
+		* sprint_mult
+	)
 
 	var burst_pair_tight := _is_burst_compensation_active()
 	if burst_pair_tight:
@@ -473,7 +532,19 @@ func _process_reload(delta: float) -> void:
 	if not _is_reloading:
 		return
 	_reload_timer -= delta
-	if _reload_timer <= 0.0:
+	if _reload_timer > 0.0:
+		return
+
+	if _reload_incremental and current_weapon_data.per_shell_reload_time > 0.0:
+		current_ammo = mini(current_ammo + 1, current_weapon_data.magazine_size)
+		ammo_changed.emit(current_ammo, current_weapon_data.magazine_size)
+		if current_ammo >= current_weapon_data.magazine_size:
+			_is_reloading = false
+			_reload_incremental = false
+		else:
+			_reload_timer = current_weapon_data.per_shell_reload_time
+	else:
 		_is_reloading = false
+		_reload_incremental = false
 		current_ammo = current_weapon_data.magazine_size
 		ammo_changed.emit(current_ammo, current_weapon_data.magazine_size)

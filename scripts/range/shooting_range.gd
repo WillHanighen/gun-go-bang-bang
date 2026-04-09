@@ -2,6 +2,7 @@ extends Node3D
 
 const PlayerScene := preload("res://scenes/player/player.tscn")
 const TargetScript := preload("res://scripts/range/target.gd")
+const MovingTargetScript := preload("res://scripts/range/moving_target.gd")
 const HUDScript := preload("res://scripts/ui/hud.gd")
 
 var player: CharacterBody3D
@@ -11,6 +12,7 @@ func _ready() -> void:
 	_create_environment()
 	_create_ground()
 	_create_targets()
+	_create_moving_targets()
 	_create_distance_markers()
 	_create_penetration_panels()
 	_spawn_player()
@@ -99,10 +101,41 @@ func _create_targets() -> void:
 		_make_target(Vector3(x, 1.0, -100.0), Vector3(0.5, 1.5, 0.02), false, Color(0.9, 0.85, 0.7))
 
 
+func _create_moving_targets() -> void:
+	# Side lanes so they do not overlap the static grid (x ∈ {-2,0,2}).
+	_make_moving_target(Vector3(4.0, 1.0, -10.0), Vector3(0.4, 0.4, 0.05), true, Color(0.65, 0.62, 0.62), 1.15, 1.0)
+	_make_moving_target(Vector3(-4.0, 1.0, -10.0), Vector3(0.4, 0.4, 0.05), true, Color(0.62, 0.65, 0.7), 1.45, 0.65)
+	_make_moving_target(Vector3(4.0, 1.0, -25.0), Vector3(0.4, 0.4, 0.05), true, Color(0.65, 0.62, 0.62), 2.0, 1.15)
+	_make_moving_target(Vector3(-4.0, 1.0, -25.0), Vector3(0.4, 0.4, 0.05), true, Color(0.62, 0.65, 0.7), 1.75, 0.85)
+	_make_moving_target(Vector3(4.0, 1.0, -50.0), Vector3(0.5, 1.5, 0.02), false, Color(0.92, 0.86, 0.72), 0.85, 0.45)
+
+
 func _make_target(pos: Vector3, sz: Vector3, steel: bool, color: Color) -> void:
+	_spawn_target(self, pos, sz, steel, color, "Target_%dm" % int(absf(pos.z)))
+
+
+func _make_moving_target(center_pos: Vector3, sz: Vector3, steel: bool, color: Color, move_speed: float, amp: float) -> void:
+	var mover := Node3D.new()
+	mover.name = "MovingTarget_%dm_%s" % [int(absf(center_pos.z)), "L" if center_pos.x < 0.0 else "R"]
+	mover.position = center_pos
+	mover.set_script(MovingTargetScript)
+	mover.set("speed", move_speed)
+	mover.set("amplitude", amp)
+	add_child(mover)
+	_spawn_target(
+		mover,
+		Vector3.ZERO,
+		sz,
+		steel,
+		color,
+		"Target_%dm_moving" % int(absf(center_pos.z))
+	)
+
+
+func _spawn_target(parent: Node3D, local_pos: Vector3, sz: Vector3, steel: bool, color: Color, node_name: String) -> void:
 	var target := StaticBody3D.new()
-	target.name = "Target_%dm" % int(absf(pos.z))
-	target.position = pos
+	target.name = node_name
+	target.position = local_pos
 	target.collision_layer = 4
 	target.collision_mask = 0
 	target.set_script(TargetScript)
@@ -127,7 +160,7 @@ func _make_target(pos: Vector3, sz: Vector3, steel: bool, color: Color) -> void:
 
 	target.add_child(mesh_inst)
 	target.add_child(col)
-	add_child(target)
+	parent.add_child(target)
 
 
 # -- distance markers ----------------------------------------------------------

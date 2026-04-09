@@ -18,6 +18,8 @@ var _volley_timer := 0.0
 const VOLLEY_WINDOW := 0.15
 
 var _crosshair_gap := 4.0
+var _shotgun_circle_radius := 4.0
+var _shotgun_crosshair := false
 
 
 func _ready() -> void:
@@ -51,14 +53,21 @@ func _update_crosshair() -> void:
 		spread_deg += caliber.pellet_spread_deg
 
 	spread_deg *= lerpf(1.0, 0.35, _wm.player._ads_progress)
-	spread_deg *= lerpf(1.0, 2.5, _wm.player._sprint_spread)
+	spread_deg *= lerpf(1.0, _wm.player.MOVE_SPREAD_WALK_MAX, _wm.player._walk_spread)
+	spread_deg *= lerpf(1.0, _wm.player.MOVE_SPREAD_SPRINT_MAX, _wm.player._sprint_spread)
+	spread_deg *= lerpf(1.0, 2.35, _wm.player._air_spread)
+	spread_deg *= lerpf(1.0, 0.88, _wm.player._crouch_progress)
 
 	var cam: Camera3D = _wm.player.get_node("Head/Camera3D")
 	var half_fov_rad := deg_to_rad(cam.fov * 0.5)
 	var pixels_per_deg := (size.y * 0.5) / rad_to_deg(half_fov_rad) if half_fov_rad > 0.0 else 14.0
 
-	var target_gap := maxf(2.0, spread_deg * pixels_per_deg)
-	_crosshair_gap = lerpf(_crosshair_gap, target_gap, 0.25)
+	var target_px := maxf(2.0, spread_deg * pixels_per_deg)
+	_shotgun_crosshair = caliber != null and caliber.pellet_count > 1
+	if _shotgun_crosshair:
+		_shotgun_circle_radius = lerpf(_shotgun_circle_radius, target_px, 0.25)
+	else:
+		_crosshair_gap = lerpf(_crosshair_gap, target_px, 0.25)
 	queue_redraw()
 
 
@@ -69,15 +78,19 @@ func _draw() -> void:
 		_draw_ammo_wheel(center)
 		return
 
-	var gap := _crosshair_gap
-	var length := clampf(gap * 0.8, 6.0, 20.0)
-	var thick := 2.0
 	var col := Color.WHITE
+	var thick := 2.0
 
-	draw_rect(Rect2(center.x - thick / 2, center.y - gap - length, thick, length), col)
-	draw_rect(Rect2(center.x - thick / 2, center.y + gap, thick, length), col)
-	draw_rect(Rect2(center.x - gap - length, center.y - thick / 2, length, thick), col)
-	draw_rect(Rect2(center.x + gap, center.y - thick / 2, length, thick), col)
+	if _shotgun_crosshair:
+		var r := _shotgun_circle_radius
+		draw_arc(center, r, 0.0, TAU, 64, col, thick, true)
+	else:
+		var gap := _crosshair_gap
+		var length := clampf(gap * 0.8, 6.0, 20.0)
+		draw_rect(Rect2(center.x - thick / 2, center.y - gap - length, thick, length), col)
+		draw_rect(Rect2(center.x - thick / 2, center.y + gap, thick, length), col)
+		draw_rect(Rect2(center.x - gap - length, center.y - thick / 2, length, thick), col)
+		draw_rect(Rect2(center.x + gap, center.y - thick / 2, length, thick), col)
 
 	draw_rect(Rect2(center.x - 1, center.y - 1, 2, 2), col)
 
@@ -179,7 +192,7 @@ func _build_ui() -> void:
 	controls_label.offset_top = 8
 	controls_label.offset_bottom = 28
 	controls_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	controls_label.text = "WASD: Move | LMB: Fire | R: Reload (hold: ammo wheel) | V: Fire Mode | Q/E: Weapon | X: Quick Swap | Esc: Cursor"
+	controls_label.text = "WASD: Move | Ctrl: Crouch | LMB: Fire | R: Reload (hold: ammo wheel) | V: Fire Mode | Q/E: Weapon | X: Quick Swap | Esc: Cursor"
 	controls_label.add_theme_font_size_override("font_size", 12)
 	controls_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 0.6))
 	add_child(controls_label)

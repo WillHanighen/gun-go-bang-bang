@@ -43,12 +43,20 @@ static func calculate_spread_directions(
 			directions.append(forward)
 		return directions
 
-	for i in pellet_count:
-		var total_spread := deg_to_rad(spread_deg + base_spread_deg)
-		var angle := randf() * TAU
-		var deflection := randf() * total_spread
-		var dir := forward.rotated(actual_up, cos(angle) * deflection)
-		dir = dir.rotated(right, sin(angle) * deflection)
-		directions.append(dir.normalized())
+	# Pellets: uniform disk in tangent plane so every shot stays inside a cone of
+	# half-angle (spread_deg + base_spread_deg), matching the circular crosshair.
+	var cone_half_deg := spread_deg + base_spread_deg
+	var cone_half_rad := deg_to_rad(cone_half_deg)
+	cone_half_rad = minf(cone_half_rad, deg_to_rad(89.0))
+	var tan_half := tan(cone_half_rad)
+	for _i in pellet_count:
+		var phi := randf() * TAU
+		var disk_r := sqrt(randf()) * tan_half
+		var offset := right * (cos(phi) * disk_r) + actual_up * (sin(phi) * disk_r)
+		var dir := forward + offset
+		if dir.length_squared() < 1e-10:
+			directions.append(forward)
+		else:
+			directions.append(dir.normalized())
 
 	return directions

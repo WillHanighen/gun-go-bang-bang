@@ -7,6 +7,7 @@ func _ready() -> void:
 	_add_key("move_left", KEY_A)
 	_add_key("move_right", KEY_D)
 	_add_key("jump", KEY_SPACE)
+	_add_key("crouch", KEY_CTRL)
 	_add_key("sprint", KEY_SHIFT)
 	_add_key("reload", KEY_R)
 	_add_key("switch_fire_mode", KEY_V)

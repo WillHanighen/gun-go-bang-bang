@@ -10,6 +10,8 @@ enum FireMode { SEMI, BURST, AUTO, PUMP }
 @export var fire_rate: float = 600.0
 @export var magazine_size: int = 30
 @export var reload_time: float = 2.0
+## 0 = one timer fills the mag (uses reload_time). Above 0 = one shell per tick (shotguns); reload_time is for caliber swap / ammo wheel only.
+@export var per_shell_reload_time: float = 0.0
 
 @export_group("Accuracy")
 @export var base_spread: float = 1.0

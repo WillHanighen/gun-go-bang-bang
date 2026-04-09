@@ -2,5 +2,143 @@
 
 [ext_resource type="Script" uid="uid://c5ys531o0whhj" path="res://scripts/range/shooting_range.gd" id="1"]
 
-[node name="ShootingRange" type="Node3D" unique_id=1359351638]
+[sub_resource type="BoxMesh" id="BoxMesh_barrier"]
+size = Vector3(5, 1, 0.25)
+
+[sub_resource type="BoxShape3D" id="BoxShape_barrier"]
+size = Vector3(5, 1, 0.25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cube1"]
+
+[sub_resource type="BoxShape3D" id="BoxShape_cube1"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_lowwall"]
+size = Vector3(6, 0.55, 0.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape_lowwall"]
+size = Vector3(6, 0.55, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_pillar"]
+size = Vector3(0.55, 2.1, 0.55)
+
+[sub_resource type="BoxShape3D" id="BoxShape_pillar"]
+size = Vector3(0.55, 2.1, 0.55)
+
+[sub_resource type="BoxMesh" id="BoxMesh_crate"]
+size = Vector3(1.25, 1.25, 1.25)
+
+[sub_resource type="BoxShape3D" id="BoxShape_crate"]
+size = Vector3(1.25, 1.25, 1.25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_step"]
+size = Vector3(2.5, 0.35, 1.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape_step"]
+size = Vector3(2.5, 0.35, 1.2)
+
+[node name="ShootingRange" type="Node3D" unique_id=60537155]
 script = ExtResource("1")
+
+[node name="RangeProps" type="Node3D" parent="." unique_id=1096162830]
+
+[node name="Barrier_Front" type="StaticBody3D" parent="RangeProps" unique_id=185297828]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -5.5)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RangeProps/Barrier_Front" unique_id=1671388922]
+mesh = SubResource("BoxMesh_barrier")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeProps/Barrier_Front" unique_id=388527579]
+shape = SubResource("BoxShape_barrier")
+
+[node name="Cover_L_10m" type="StaticBody3D" parent="RangeProps" unique_id=913225098]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 0.5, -10)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RangeProps/Cover_L_10m" unique_id=670721750]
+mesh = SubResource("BoxMesh_cube1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeProps/Cover_L_10m" unique_id=1232129934]
+shape = SubResource("BoxShape_cube1")
+
+[node name="Cover_R_10m" type="StaticBody3D" parent="RangeProps" unique_id=636755076]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.5, 0.5, -10)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RangeProps/Cover_R_10m" unique_id=226949246]
+mesh = SubResource("BoxMesh_cube1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeProps/Cover_R_10m" unique_id=1319461809]
+shape = SubResource("BoxShape_cube1")
+
+[node name="Cover_L_20m" type="StaticBody3D" parent="RangeProps" unique_id=2026516779]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 0.5, -20)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RangeProps/Cover_L_20m" unique_id=908145236]
+mesh = SubResource("BoxMesh_cube1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeProps/Cover_L_20m" unique_id=1903648385]
+shape = SubResource("BoxShape_cube1")
+
+[node name="Cover_R_20m" type="StaticBody3D" parent="RangeProps" unique_id=813677069]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.5, 0.5, -20)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RangeProps/Cover_R_20m" unique_id=1434873555]
+mesh = SubResource("BoxMesh_cube1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeProps/Cover_R_20m" unique_id=1167727820]
+shape = SubResource("BoxShape_cube1")
+
+[node name="LowWall_Mid" type="StaticBody3D" parent="RangeProps" unique_id=1961337138]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.275, -22)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RangeProps/LowWall_Mid" unique_id=920778057]
+mesh = SubResource("BoxMesh_lowwall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeProps/LowWall_Mid" unique_id=220993742]
+shape = SubResource("BoxShape_lowwall")
+
+[node name="Wall_Rear" type="StaticBody3D" parent="RangeProps" unique_id=1968287559]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.275, -22)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RangeProps/Wall_Rear" unique_id=1417441711]
+transform = Transform3D(3, 0, 0, 0, 5, 0, 0, 0, 1, 0, 1, 35)
+mesh = SubResource("BoxMesh_lowwall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeProps/Wall_Rear" unique_id=1072634410]
+transform = Transform3D(3, 0, 0, 0, 5, 0, 0, 0, 1, 0, 1, 35)
+shape = SubResource("BoxShape_lowwall")
+
+[node name="Pillar_30m" type="StaticBody3D" parent="RangeProps" unique_id=998798510]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 1.05, -30)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RangeProps/Pillar_30m" unique_id=1703570446]
+mesh = SubResource("BoxMesh_pillar")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeProps/Pillar_30m" unique_id=941990915]
+shape = SubResource("BoxShape_pillar")
+
+[node name="Crate_Stack" type="StaticBody3D" parent="RangeProps" unique_id=1423334081]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0.625, -24)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RangeProps/Crate_Stack" unique_id=763077151]
+mesh = SubResource("BoxMesh_crate")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeProps/Crate_Stack" unique_id=1328134404]
+shape = SubResource("BoxShape_crate")
+
+[node name="Marker_Block" type="StaticBody3D" parent="RangeProps" unique_id=586980610]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0.175, -7.5)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RangeProps/Marker_Block" unique_id=1818996764]
+mesh = SubResource("BoxMesh_step")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RangeProps/Marker_Block" unique_id=1454902015]
+shape = SubResource("BoxShape_step")
