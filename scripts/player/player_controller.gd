@@ -2,50 +2,37 @@ extends CharacterBody3D
 
 const SPEED := 5.5
 const SPRINT_SPEED := 9.5
-const CROUCH_SPEED_MULT := 0.5
-## Full ADS: closer to walk speed; penalty is milder than before.
+const CROUCH_SPEED_MULT := 0.55
 const ADS_SPEED := 5.25
+const JUMP_VELOCITY := 4.5
+
+const GROUND_ACCEL := 30.0
+const GROUND_DECEL := 36.0
+const AIR_ACCEL := 12.0
+const AIR_MAX_SPEED := 6.5
+const WALL_JUMP_UP := 3.5
+const WALL_JUMP_PUSH := 5.5
+const WALL_JUMP_GRACE_TIME := 0.18
+const WALL_PROBE_LEN := 0.58
+const WALL_PROBE_HEIGHT := 0.65
+
 const STANDING_HEAD_Y := 0.7
 const CROUCH_HEAD_Y := 0.38
 const STANDING_CAPSULE_CYLINDER_H := 1.8
 const CROUCH_CAPSULE_CYLINDER_H := 0.45
-const JUMP_VELOCITY := 4.5
-## Krunker-style slide: crouch at speed to boost and coast (hold crouch to ride it).
-const SLIDE_ENTER_MIN_SPEED := 4.75
-const SLIDE_MAX_SPEED := 15.0
-const SLIDE_BOOST_MULT := 1.32
-const SLIDE_FRICTION := 3.25
-const SLIDE_STEER := 6.0
-const SLIDE_END_SPEED := 2.4
-## When horizontal speed exceeds walk/sprint/ADS cap, decay toward cap instead of snapping.
-const OVERSPEED_STEER := 8.5
-const MOMENTUM_DECAY_TO_CAP := 3.8
-## No movement keys: bleed speed (stronger than decay-to-cap so you still stop).
-const MOMENTUM_COAST_FRICTION := 11.0
-## Push off the wall (horizontal) and up; away from wall normal.
-const WALL_JUMP_UP := 3.5
-const WALL_JUMP_OUT := 5.5
-const WALL_PROBE_LEN := 0.58
-const WALL_PROBE_HEIGHT := 0.65
-## Source-style air accel (wish direction); stationary jump + W gains speed over a few frames.
-const AIR_ACCEL := 42.0
+const CROUCH_TRANSITION_SPEED := 10.0
+
 const MOUSE_SENSITIVITY := 0.002
 const ADS_SENSITIVITY_MULT := 0.7
-## At full ADS, recoil is multiplied by this (hip fire = 1.0). 
-## Matches spread tightening tier.
-## Note: revamp later when grips and whatnot are customizable.
 const ADS_RECOIL_MULT := 0.65
 
 const DEFAULT_FOV := 75.0
 const ADS_FOV := 50.0
 
 const RECOIL_RECOVERY_FRACTION := 0.55
-## Applied to kick from WeaponResource (degrees → camera). Tune global feel here.
 const RECOIL_IMPACT_MULT := 1.75
 
-## Hip-fire spread mult when walking (previous sprint tier).
 const MOVE_SPREAD_WALK_MAX := 1.32
-## Hip-fire spread mult when sprinting
 const MOVE_SPREAD_SPRINT_MAX := 1.52
 
 @onready var head: Node3D = $Head
@@ -55,28 +42,23 @@ const MOVE_SPREAD_SPRINT_MAX := 1.52
 
 var is_aiming := false
 var is_sprinting := false
+var is_sliding := false
 var _ads_progress := 0.0
 var _sprint_spread := 0.0
-## Smoothed 0 = still, 1 = walking (not sprinting).
 var _walk_spread := 0.0
-## Smoothed 0 = on ground, 1 = airborne (hurts accuracy while jumping / falling).
 var _air_spread := 0.0
-## Smoothed 0 = standing, 1 = full crouch (tighter spread, lower capsule).
 var _crouch_progress := 0.0
 var _foot_capsule_offset := 0.0
 var _capsule_radius := 0.3
 var _recoil_v_recover := 0.0
 var _recoil_h_recover := 0.0
-
-var is_sliding := false
-var _slide_skip_friction := false
-## Wall contact from previous physics tick (valid for wall jump after move_and_slide).
-var _was_on_wall := false
-var _wall_normal := Vector3.UP
+var _wall_jump_normal := Vector3.ZERO
+var _wall_jump_grace_timer := 0.0
 
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	floor_snap_length = 0.25
 	var cap: CapsuleShape3D = collision_shape.shape as CapsuleShape3D
 	if cap:
 		_capsule_radius = cap.radius
@@ -119,220 +101,171 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not is_on_floor():
-		velocity += get_gravity() * delta
-
-	if Input.is_action_just_pressed("jump"):
-		if is_on_floor():
-			velocity.y = JUMP_VELOCITY
-		else:
-			var away := _get_wall_jump_away()
-			if away.length_squared() > 0.0001:
-				velocity.x = away.x * WALL_JUMP_OUT
-				velocity.z = away.z * WALL_JUMP_OUT
-				velocity.y = WALL_JUMP_UP
-				_was_on_wall = false
-
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
-	var direction := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-	var hz_speed := Vector3(velocity.x, 0.0, velocity.z).length()
+	var move_dir := (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
+	var jump_pressed := Input.is_action_just_pressed("jump")
+	var on_floor := is_on_floor()
 
-	_try_start_slide(hz_speed, direction)
+	_update_crouch(delta, Input.is_action_pressed("crouch"))
+	_update_wall_jump_cache(delta, on_floor)
 
-	var crouch_rate := 12.0
-	if is_sliding:
-		_crouch_progress = 1.0
-	else:
-		var wants_crouch := Input.is_action_pressed("crouch") and is_on_floor()
-		if wants_crouch:
-			_crouch_progress = minf(_crouch_progress + crouch_rate * delta, 1.0)
-		else:
-			_crouch_progress = maxf(_crouch_progress - crouch_rate * delta, 0.0)
-
-	var air_target := 0.0 if is_on_floor() else 1.0
-	_air_spread = lerpf(_air_spread, air_target, 10.0 * delta)
-
-	_apply_crouch_capsule()
-
-	var can_sprint := _crouch_progress < 0.25 and not is_sliding
 	is_sprinting = (
-		can_sprint
+		on_floor
+		and _crouch_progress < 0.2
+		and input_dir.length_squared() > 0.01
 		and Input.is_action_pressed("sprint")
-		and direction.length() > 0.1
 	)
-	var base_speed := SPRINT_SPEED if is_sprinting else SPEED
-	base_speed *= lerpf(1.0, CROUCH_SPEED_MULT, _crouch_progress)
-	var current_speed := lerpf(base_speed, ADS_SPEED, _ads_progress)
+	var current_speed := _get_current_speed()
 
-	if is_sliding:
-		_apply_slide(delta, direction)
-	elif is_on_floor():
-		_apply_ground_horizontal_move(delta, direction, current_speed)
+	if on_floor:
+		if jump_pressed:
+			velocity.y = JUMP_VELOCITY
+		_apply_ground_horizontal_move(delta, move_dir, current_speed)
 	else:
-		_apply_air_horizontal_move(delta, direction, current_speed)
+		velocity += get_gravity() * delta
+		var did_wall_jump := jump_pressed and _try_wall_jump()
+		if not did_wall_jump:
+			_apply_air_horizontal_move(delta, move_dir, current_speed)
 
 	move_and_slide()
-
-	if is_on_wall():
-		_was_on_wall = true
-		_wall_normal = get_wall_normal()
-	else:
-		var probed := _probe_nearest_wall_normal()
-		if probed.length_squared() > 0.0001:
-			_was_on_wall = true
-			_wall_normal = probed
-		else:
-			_was_on_wall = false
+	_update_wall_jump_cache(0.0, is_on_floor())
 
 	head.position.y = lerpf(STANDING_HEAD_Y, CROUCH_HEAD_Y, _crouch_progress)
-
-	var sprint_target := 1.0 if (is_sprinting or is_sliding) else 0.0
-	_sprint_spread = lerpf(_sprint_spread, sprint_target, 6.0 * delta)
+	var on_floor_now := is_on_floor()
+	_air_spread = lerpf(_air_spread, 0.0 if on_floor_now else 1.0, 10.0 * delta)
+	_sprint_spread = lerpf(_sprint_spread, 1.0 if is_sprinting else 0.0, 6.0 * delta)
 
 	var walk_target := 0.0
-	if is_on_floor() and direction.length() > 0.1 and not is_sprinting and not is_sliding:
+	if on_floor_now and move_dir.length_squared() > 0.01 and not is_sprinting:
 		walk_target = 1.0
 	_walk_spread = lerpf(_walk_spread, walk_target, 6.0 * delta)
 
 	_recover_recoil(delta)
 
 
-func _try_start_slide(hz_speed: float, direction: Vector3) -> void:
-	if is_sliding:
-		if not is_on_floor() or not Input.is_action_pressed("crouch"):
-			is_sliding = false
-			_slide_skip_friction = false
-		else:
-			hz_speed = Vector3(velocity.x, 0.0, velocity.z).length()
-			if hz_speed < SLIDE_END_SPEED:
-				is_sliding = false
-				_slide_skip_friction = false
-		return
-	if not is_on_floor():
-		return
-	if not Input.is_action_just_pressed("crouch"):
-		return
-	if not Input.is_action_pressed("sprint"):
-		return
-	if hz_speed < SLIDE_ENTER_MIN_SPEED:
-		return
-	if direction.length_squared() < 0.0025:
-		return
-	is_sliding = true
-	_slide_skip_friction = true
-	var d := direction.normalized()
-	var boosted := minf(maxf(hz_speed * SLIDE_BOOST_MULT, SLIDE_ENTER_MIN_SPEED * SLIDE_BOOST_MULT), SLIDE_MAX_SPEED)
-	velocity.x = d.x * boosted
-	velocity.z = d.z * boosted
+func _get_current_speed() -> float:
+	var base_speed := SPRINT_SPEED if is_sprinting else SPEED
+	base_speed *= lerpf(1.0, CROUCH_SPEED_MULT, _crouch_progress)
+	return lerpf(base_speed, ADS_SPEED, _ads_progress)
 
 
-func _apply_slide(delta: float, direction: Vector3) -> void:
-	var hv := Vector3(velocity.x, 0.0, velocity.z)
-	var spd := hv.length()
-	var forward := hv / spd if spd > 0.08 else Vector3.ZERO
-	if direction.length_squared() > 0.0025:
-		var target := direction.normalized()
-		if forward.length_squared() > 0.0001:
-			forward = (forward + target * (SLIDE_STEER * delta)).normalized()
-		else:
-			forward = target
-	if not _slide_skip_friction:
-		var fric := SLIDE_FRICTION * delta
-		spd = maxf(0.0, spd - fric * maxf(1.0, spd * 0.08))
-	else:
-		_slide_skip_friction = false
-	spd = minf(spd, SLIDE_MAX_SPEED)
-	velocity.x = forward.x * spd
-	velocity.z = forward.z * spd
+func _update_crouch(delta: float, wants_crouch: bool) -> void:
+	var crouch_target := 1.0 if wants_crouch else 0.0
+	if crouch_target < 0.5 and not _can_stand():
+		crouch_target = 1.0
+	_crouch_progress = move_toward(_crouch_progress, crouch_target, CROUCH_TRANSITION_SPEED * delta)
+	_apply_crouch_capsule()
 
 
-func _apply_ground_horizontal_move(delta: float, direction: Vector3, current_speed: float) -> void:
-	var hz := Vector3(velocity.x, 0.0, velocity.z)
-	var spd := hz.length()
-	var has_input := direction.length_squared() > 0.01
-	if has_input:
-		var dir := direction.normalized()
-		if spd <= current_speed + 0.02:
-			velocity.x = dir.x * current_speed
-			velocity.z = dir.z * current_speed
-		else:
-			var nd := hz.normalized().lerp(dir, minf(1.0, OVERSPEED_STEER * delta)).normalized()
-			var tgt := move_toward(spd, current_speed, MOMENTUM_DECAY_TO_CAP * delta)
-			velocity.x = nd.x * tgt
-			velocity.z = nd.z * tgt
-	elif spd < 0.02:
-		velocity.x = 0.0
-		velocity.z = 0.0
-	elif spd <= current_speed + 0.02:
-		velocity.x = move_toward(velocity.x, 0.0, current_speed * delta * 10.0)
-		velocity.z = move_toward(velocity.z, 0.0, current_speed * delta * 10.0)
-	else:
-		var nd := hz.normalized()
-		var tgt := move_toward(spd, 0.0, MOMENTUM_COAST_FRICTION * delta)
-		velocity.x = nd.x * tgt
-		velocity.z = nd.z * tgt
+func _apply_ground_horizontal_move(delta: float, direction: Vector3, move_speed: float) -> void:
+	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
+	var target := direction * move_speed
+	var accel := GROUND_ACCEL if direction.length_squared() > 0.01 else GROUND_DECEL
+	horizontal = horizontal.move_toward(target, accel * delta)
+	velocity.x = horizontal.x
+	velocity.z = horizontal.z
 
 
-func _apply_air_horizontal_move(delta: float, direction: Vector3, wish_speed: float) -> void:
+func _apply_air_horizontal_move(delta: float, direction: Vector3, move_speed: float) -> void:
 	if direction.length_squared() < 0.0001:
 		return
 	var wish_dir := direction.normalized()
-	var hz := Vector3(velocity.x, 0.0, velocity.z)
-	var current_along := hz.dot(wish_dir)
-	var add_speed := wish_speed - current_along
+	var capped_speed := minf(move_speed, AIR_MAX_SPEED)
+	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
+	var current_along := horizontal.dot(wish_dir)
+	var add_speed := capped_speed - current_along
 	if add_speed <= 0.0:
 		return
-	var accel_speed := minf(AIR_ACCEL * wish_speed * delta, add_speed)
-	hz += wish_dir * accel_speed
-	velocity.x = hz.x
-	velocity.z = hz.z
+	var accel_speed := minf(AIR_ACCEL * capped_speed * delta, add_speed)
+	horizontal += wish_dir * accel_speed
+	velocity.x = horizontal.x
+	velocity.z = horizontal.z
+
+
+func _update_wall_jump_cache(delta: float, on_floor: bool) -> void:
+	if on_floor:
+		_wall_jump_grace_timer = 0.0
+		_wall_jump_normal = Vector3.ZERO
+		return
+
+	var wall_normal := _get_wall_jump_surface_normal()
+	if wall_normal.length_squared() > 0.0001:
+		_wall_jump_normal = wall_normal
+		_wall_jump_grace_timer = WALL_JUMP_GRACE_TIME
+		return
+
+	_wall_jump_grace_timer = maxf(_wall_jump_grace_timer - delta, 0.0)
+	if _wall_jump_grace_timer <= 0.0:
+		_wall_jump_normal = Vector3.ZERO
+
+
+func _try_wall_jump() -> bool:
+	if _wall_jump_grace_timer <= 0.0:
+		return false
+	var away := Vector3(_wall_jump_normal.x, 0.0, _wall_jump_normal.z)
+	if away.length_squared() < 0.0001:
+		return false
+	away = away.normalized()
+	velocity.x = away.x * WALL_JUMP_PUSH
+	velocity.z = away.z * WALL_JUMP_PUSH
+	velocity.y = WALL_JUMP_UP
+	_wall_jump_grace_timer = 0.0
+	_wall_jump_normal = Vector3.ZERO
+	return true
+
+
+func _get_wall_jump_surface_normal() -> Vector3:
+	if is_on_wall():
+		for i in get_slide_collision_count():
+			var collision := get_slide_collision(i)
+			var normal := collision.get_normal()
+			if absf(normal.y) < 0.2:
+				return Vector3(normal.x, 0.0, normal.z).normalized()
+
+	return _probe_nearest_wall_normal()
 
 
 func _probe_nearest_wall_normal() -> Vector3:
 	var origin := global_position + Vector3(0.0, WALL_PROBE_HEIGHT, 0.0)
-	var space := get_world_3d().direct_space_state
-	var dirs: Array[Vector3] = [
-		Vector3(1, 0, 0), Vector3(-1, 0, 0), Vector3(0, 0, 1), Vector3(0, 0, -1)
+	var horizontal_velocity := Vector3(velocity.x, 0.0, velocity.z)
+	var probe_dirs: Array[Vector3] = [
+		Vector3.LEFT,
+		Vector3.RIGHT,
+		Vector3.FORWARD,
+		Vector3.BACK
 	]
-	var hz_vel := Vector3(velocity.x, 0.0, velocity.z)
-	if hz_vel.length_squared() > 0.01:
-		var hvn := hz_vel.normalized()
-		dirs.append(hvn)
-		dirs.append(-hvn)
-	var best_n := Vector3.ZERO
-	var best_d := 1.0e12
-	var mask := collision_mask
-	if mask == 0:
-		mask = 1
-	for d in dirs:
-		var dn := d.normalized()
-		var q := PhysicsRayQueryParameters3D.create(origin, origin + dn * WALL_PROBE_LEN)
-		q.collision_mask = mask
-		q.exclude = [get_rid()]
-		var hit := space.intersect_ray(q)
+	if horizontal_velocity.length_squared() > 0.01:
+		var velocity_dir := horizontal_velocity.normalized()
+		probe_dirs.append(velocity_dir)
+		probe_dirs.append(-velocity_dir)
+
+	var facing_dir := -global_basis.z
+	probe_dirs.append(Vector3(facing_dir.x, 0.0, facing_dir.z).normalized())
+
+	var space := get_world_3d().direct_space_state
+	var best_normal := Vector3.ZERO
+	var best_distance := INF
+	var mask := collision_mask if collision_mask != 0 else 1
+
+	for direction in probe_dirs:
+		if direction.length_squared() < 0.0001:
+			continue
+		var query := PhysicsRayQueryParameters3D.create(origin, origin + direction.normalized() * WALL_PROBE_LEN)
+		query.collision_mask = mask
+		query.exclude = [get_rid()]
+		var hit := space.intersect_ray(query)
 		if hit.is_empty():
 			continue
-		var pos: Vector3 = hit["position"]
-		var dist := origin.distance_to(pos)
-		if dist < best_d:
-			best_d = dist
-			best_n = hit["normal"] as Vector3
-	if best_n.length_squared() < 0.0001:
-		return Vector3.ZERO
-	return best_n.normalized()
+		var normal: Vector3 = hit["normal"]
+		if absf(normal.y) >= 0.2:
+			continue
+		var hit_pos: Vector3 = hit["position"]
+		var hit_distance := origin.distance_to(hit_pos)
+		if hit_distance < best_distance:
+			best_distance = hit_distance
+			best_normal = Vector3(normal.x, 0.0, normal.z).normalized()
 
-
-func _get_wall_jump_away() -> Vector3:
-	var n := _probe_nearest_wall_normal()
-	if n.length_squared() > 0.0001:
-		var away := Vector3(n.x, 0.0, n.z)
-		if away.length_squared() > 0.0001:
-			return away.normalized()
-	if _was_on_wall:
-		var away2 := Vector3(_wall_normal.x, 0.0, _wall_normal.z)
-		if away2.length_squared() > 0.0001:
-			return away2.normalized()
-	return Vector3.ZERO
+	return best_normal
 
 
 func apply_recoil(vertical_deg: float, horizontal_deg: float) -> void:
@@ -370,6 +303,24 @@ func _recover_recoil(delta: float) -> void:
 		_recoil_h_recover = 0.0
 
 
+func _can_stand() -> bool:
+	if _crouch_progress <= 0.01:
+		return true
+	var cap: CapsuleShape3D = collision_shape.shape as CapsuleShape3D
+	if not cap:
+		return true
+
+	var previous_height := cap.height
+	var previous_y := collision_shape.position.y
+	cap.height = STANDING_CAPSULE_CYLINDER_H
+	collision_shape.position.y = _collision_center_y_for_cylinder(STANDING_CAPSULE_CYLINDER_H)
+	# Ignore normal floor contact here; we only want ceiling / wall obstruction.
+	var blocked := test_move(global_transform, Vector3.ZERO, null, 0.0, false)
+	cap.height = previous_height
+	collision_shape.position.y = previous_y
+	return not blocked
+
+
 func _collision_center_y_for_cylinder(cyl_h: float) -> float:
 	return _foot_capsule_offset + (cyl_h + 2.0 * _capsule_radius) * 0.5
 
@@ -381,3 +332,19 @@ func _apply_crouch_capsule() -> void:
 	var cyl := lerpf(STANDING_CAPSULE_CYLINDER_H, CROUCH_CAPSULE_CYLINDER_H, _crouch_progress)
 	cap.height = cyl
 	collision_shape.position.y = _collision_center_y_for_cylinder(cyl)
+
+
+func get_camera_3d() -> Camera3D:
+	return camera
+
+
+func get_spread_state() -> Dictionary:
+	return {
+		"ads_progress": _ads_progress,
+		"walk_progress": _walk_spread,
+		"sprint_progress": _sprint_spread,
+		"air_progress": _air_spread,
+		"crouch_progress": _crouch_progress,
+		"walk_spread_mult": MOVE_SPREAD_WALK_MAX,
+		"sprint_spread_mult": MOVE_SPREAD_SPRINT_MAX,
+	}

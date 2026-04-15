@@ -46,23 +46,8 @@ func _process(delta: float) -> void:
 func _update_crosshair() -> void:
 	if not _wm:
 		return
-	var spread_deg: float = _wm.current_spread if _wm.current_weapon_data else 0.0
-
 	var caliber: CaliberResource = _wm.get_current_caliber() if _wm.current_weapon_data else null
-	if caliber and caliber.pellet_count > 1:
-		spread_deg += caliber.pellet_spread_deg
-
-	spread_deg *= lerpf(1.0, 0.35, _wm.player._ads_progress)
-	spread_deg *= lerpf(1.0, _wm.player.MOVE_SPREAD_WALK_MAX, _wm.player._walk_spread)
-	spread_deg *= lerpf(1.0, _wm.player.MOVE_SPREAD_SPRINT_MAX, _wm.player._sprint_spread)
-	spread_deg *= lerpf(1.0, 2.35, _wm.player._air_spread)
-	spread_deg *= lerpf(1.0, 0.88, _wm.player._crouch_progress)
-
-	var cam: Camera3D = _wm.player.get_node("Head/Camera3D")
-	var half_fov_rad := deg_to_rad(cam.fov * 0.5)
-	var pixels_per_deg := (size.y * 0.5) / rad_to_deg(half_fov_rad) if half_fov_rad > 0.0 else 14.0
-
-	var target_px := maxf(2.0, spread_deg * pixels_per_deg)
+	var target_px: float = _wm.get_crosshair_pixels(size)
 	_shotgun_crosshair = caliber != null and caliber.pellet_count > 1
 	if _shotgun_crosshair:
 		_shotgun_circle_radius = lerpf(_shotgun_circle_radius, target_px, 0.25)
