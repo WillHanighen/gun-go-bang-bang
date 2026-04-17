@@ -16,7 +16,7 @@ func _ready() -> void:
 		_original_material = mesh.get_surface_override_material(0)
 
 
-func take_damage(amount: float, hit_position: Vector3, direction: Vector3) -> void:
+func take_damage(amount: float, _hit_position: Vector3, _direction: Vector3) -> void:
 	current_health -= amount
 	_flash_hit()
 	if is_steel:

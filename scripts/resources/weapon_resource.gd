@@ -2,6 +2,8 @@ class_name WeaponResource
 extends Resource
 
 enum FireMode { SEMI, BURST, AUTO, PUMP }
+enum InventoryKind { FIREARM, MELEE }
+enum CarryClass { SMALL, MEDIUM, LARGE, VERY_LARGE, MELEE }
 
 @export var weapon_name: String = ""
 @export var calibers: Array[CaliberResource] = []
@@ -22,6 +24,12 @@ enum FireMode { SEMI, BURST, AUTO, PUMP }
 @export_group("Handling")
 ## Seconds to reach full ADS. Pistols ~0.15, SMGs ~0.2, rifles ~0.3, shotguns ~0.35
 @export var ads_time: float = 0.25
+
+@export_group("Inventory")
+@export var inventory_kind: InventoryKind = InventoryKind.FIREARM
+@export var carry_class: CarryClass = CarryClass.MEDIUM
+@export var inventory_width: int = 3
+@export var inventory_height: int = 2
 
 @export_group("Recoil")
 @export var recoil_vertical: float = 2.0
@@ -56,3 +64,21 @@ func get_effective_recoil_vertical() -> float:
 
 func get_effective_recoil_horizontal() -> float:
 	return recoil_horizontal_range * (1.0 - recoil_mitigation)
+
+
+func get_inventory_size() -> Vector2i:
+	return Vector2i(maxi(inventory_width, 1), maxi(inventory_height, 1))
+
+
+func fits_equipment_slot(slot_name: StringName) -> bool:
+	match slot_name:
+		&"primary":
+			return inventory_kind == InventoryKind.FIREARM or inventory_kind == InventoryKind.MELEE
+		&"secondary":
+			if inventory_kind == InventoryKind.MELEE:
+				return true
+			return carry_class == CarryClass.SMALL or carry_class == CarryClass.MEDIUM
+		&"melee":
+			return inventory_kind == InventoryKind.MELEE
+		_:
+			return true

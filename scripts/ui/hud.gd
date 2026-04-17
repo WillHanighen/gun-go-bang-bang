@@ -1,15 +1,20 @@
 extends Control
 
+const InventoryPanelScript := preload("res://scripts/ui/inventory_panel.gd")
+
 var weapon_label: Label
 var ammo_label: Label
 var fire_mode_label: Label
 var caliber_label: Label
 var hit_info_label: Label
 var controls_label: Label
+var interaction_prompt_label: Label
+var inventory_panel: Control
 
 var _hit_info_timer: float = 0.0
 
 var _wm: Node
+var _inventory: PlayerInventory
 var _volley_dmg := 0.0
 var _volley_hits := 0
 var _volley_dist := 0.0
@@ -23,7 +28,7 @@ var _shotgun_crosshair := false
 
 
 func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mouse_filter = Control.MOUSE_FILTER_PASS
 	_build_ui()
 	await get_tree().process_frame
 	_connect_signals()
@@ -177,10 +182,28 @@ func _build_ui() -> void:
 	controls_label.offset_top = 8
 	controls_label.offset_bottom = 28
 	controls_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	controls_label.text = "WASD: Move | Ctrl: Crouch | LMB: Fire | R: Reload (hold: ammo wheel) | V: Fire Mode | Q/E: Weapon | X: Quick Swap | Esc: Cursor"
+	controls_label.text = "WASD: Move | Ctrl: Crouch | F: Interact | Tab: Inventory | LMB: Fire | R: Reload (hold: ammo wheel) | V: Fire Mode | Q/E: Weapon | X: Quick Swap | Esc: Cursor"
 	controls_label.add_theme_font_size_override("font_size", 12)
 	controls_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 0.6))
 	add_child(controls_label)
+
+	interaction_prompt_label = Label.new()
+	interaction_prompt_label.anchor_left = 0.5
+	interaction_prompt_label.anchor_right = 0.5
+	interaction_prompt_label.offset_left = -280
+	interaction_prompt_label.offset_right = 280
+	interaction_prompt_label.offset_top = 430
+	interaction_prompt_label.offset_bottom = 460
+	interaction_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	interaction_prompt_label.add_theme_font_size_override("font_size", 18)
+	interaction_prompt_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.7))
+	add_child(interaction_prompt_label)
+
+	inventory_panel = Control.new()
+	inventory_panel.name = "InventoryPanel"
+	inventory_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	inventory_panel.set_script(InventoryPanelScript)
+	add_child(inventory_panel)
 
 
 func _make_label(font_size: int, color: Color) -> Label:
@@ -194,6 +217,14 @@ func _connect_signals() -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	if not p:
 		return
+
+	_inventory = p.get_node_or_null("PlayerInventory") as PlayerInventory
+	if _inventory and inventory_panel:
+		inventory_panel.call("setup", _inventory)
+
+	p.interaction_prompt_changed.connect(_on_interaction_prompt_changed)
+	_on_interaction_prompt_changed(p.get_interaction_prompt())
+
 	_wm = p.get_node_or_null("WeaponManager")
 	if not _wm:
 		return
@@ -209,9 +240,22 @@ func _connect_signals() -> void:
 		_on_weapon_changed(_wm.current_weapon_data)
 		_on_ammo_changed(_wm.current_ammo, _wm.current_weapon_data.magazine_size)
 		_on_fire_mode_changed(_wm.get_current_fire_mode())
+	else:
+		_on_weapon_changed(null)
+		_on_ammo_changed(0, 0)
+		_on_fire_mode_changed(WeaponResource.FireMode.SEMI)
+
+
+func _on_interaction_prompt_changed(prompt: String) -> void:
+	interaction_prompt_label.text = prompt
 
 
 func _on_weapon_changed(weapon: WeaponResource) -> void:
+	if not weapon:
+		weapon_label.text = "UNARMED"
+		caliber_label.text = ""
+		fire_mode_label.text = ""
+		return
 	weapon_label.text = weapon.weapon_name
 	if weapon.calibers.size() > 0:
 		var suffix := "  [hold R]" if weapon.calibers.size() > 1 else ""
@@ -219,10 +263,16 @@ func _on_weapon_changed(weapon: WeaponResource) -> void:
 
 
 func _on_ammo_changed(current: int, max_ammo: int) -> void:
+	if max_ammo <= 0:
+		ammo_label.text = ""
+		return
 	ammo_label.text = "%d / %d" % [current, max_ammo]
 
 
 func _on_fire_mode_changed(mode: WeaponResource.FireMode) -> void:
+	if not _wm or not _wm.current_weapon_data:
+		fire_mode_label.text = ""
+		return
 	var names := {
 		WeaponResource.FireMode.SEMI: "SEMI",
 		WeaponResource.FireMode.BURST: "BURST",
@@ -235,6 +285,8 @@ func _on_fire_mode_changed(mode: WeaponResource.FireMode) -> void:
 func _on_caliber_changed(caliber: CaliberResource) -> void:
 	if caliber:
 		caliber_label.text = caliber.caliber_name + "  [hold R]"
+	else:
+		caliber_label.text = ""
 
 
 func _on_hit_registered(distance: float, damage: float, _target_name: String) -> void:

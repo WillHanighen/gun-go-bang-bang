@@ -1,6 +1,23 @@
-# gun go bang bang
+# (codename) Gun Go Bang Bang
+## ive not decided on a name yet
 
-A **Godot 4.6** first-person shooting sandbox: procedural outdoor range, multiple firearms, ammo types, and simple ballistics (including penetration). Built for experimenting with weapon feel, not as a shipped game.
+A **Godot 4.6** first-person shooting sandbox with a playful, slightly ridiculous vibe: procedural outdoor range, multiple firearms, ammo types, and simple ballistics (including penetration). Built for experimenting with weapon feel, not as a serious milsim or a shipped game.
+
+## Tone and direction
+
+This project should feel like a mix of:
+
+- **TABG-style goofiness**: toy-box energy, weird charm, and a willingness to be a little stupid on purpose
+- **STRAFTAT-style tech**: fast, sharp, mechanical, and clean in the ways the sandbox actually feels to play
+
+The target is **goofy-tech**, not grim-tactical. That means:
+
+- weapon handling should feel expressive and fun first, realistic second
+- systems can be crunchy, but presentation should stay playful and readable
+- the sandbox should reward experimentation, odd combinations, and "what if this was a bad idea?" moments
+- avoid lore-heavy, military-sim, or self-important framing unless it is clearly being used as a joke
+
+If something has to choose between "serious and authentic" vs "funny, punchy, and memorable," the project should usually prefer the second option.
 
 ## Requirements
 

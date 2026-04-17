@@ -16,26 +16,24 @@ const MAX_DECALS := 200
 const WHEEL_HOLD_THRESHOLD := 0.15
 const WHEEL_DEADZONE := 15.0
 
-var weapons: Array[WeaponResource] = []
-var current_weapon_index: int = 0
-var current_caliber_index: int = 0
 var current_weapon_data: WeaponResource
-var current_ammo: int = 0
-var current_fire_mode_index: int = 0
-var current_spread: float = 0.0
+var current_caliber_index := 0
+var current_ammo := 0
+var current_fire_mode_index := 0
+var current_spread := 0.0
 
-var _time_since_last_shot: float = 999.0
-var _burst_remaining: int = 0
-var _burst_timer: float = 0.0
-var _burst_volley_shot_index: int = 0
-var _burst_delayed_recoil_id: int = 0
-var _is_reloading: bool = false
-var _reload_timer: float = 0.0
+var _time_since_last_shot := 999.0
+var _burst_remaining := 0
+var _burst_timer := 0.0
+var _burst_volley_shot_index := 0
+var _burst_delayed_recoil_id := 0
+var _is_reloading := false
+var _reload_timer := 0.0
 ## True while loading shells one at a time (per_shell_reload_time > 0).
-var _reload_incremental: bool = false
+var _reload_incremental := false
 ## True when a caliber swap delay should hand off into shell-by-shell loading.
-var _reload_continue_incremental: bool = false
-## Per-weapon-index snapshots so switching away keeps fire mode, ammo type, rounds, spread, reload progress.
+var _reload_continue_incremental := false
+## Per-weapon snapshots so switching away keeps fire mode, ammo type, rounds, spread, reload progress.
 var _weapon_snapshots: Dictionary = {}
 
 var ammo_wheel_open := false
@@ -47,6 +45,7 @@ var _reload_hold_time := 0.0
 var _empty_dry_fire_streak := 0
 
 @onready var player: CharacterBody3D = get_parent() as CharacterBody3D
+@onready var inventory: PlayerInventory = player.get_node_or_null("PlayerInventory") as PlayerInventory
 
 var _camera: Camera3D
 var _decal_pool
@@ -63,6 +62,10 @@ func _ready() -> void:
 		var shot_resolver_script: Script = WeaponShotResolverScript
 		_shot_resolver = shot_resolver_script.new()
 		_shot_resolver.setup(player.get_world_3d(), _decal_pool)
+
+	if inventory:
+		inventory.active_weapon_changed.connect(_on_active_weapon_changed)
+		_on_active_weapon_changed(inventory.get_active_weapon())
 
 
 func _process(delta: float) -> void:
@@ -101,34 +104,19 @@ func get_crosshair_pixels(viewport_size: Vector2) -> float:
 	)
 
 
+func add_weapon(weapon: WeaponResource, auto_equip: bool = true) -> int:
+	if not inventory:
+		return -1
+	return inventory.add_weapon(weapon, auto_equip)
+
+
 func equip_weapon(index: int) -> void:
-	if index < 0 or index >= weapons.size():
+	if not inventory:
 		return
-	if index == current_weapon_index and current_weapon_data != null:
+	var slot_order := inventory.get_slot_order()
+	if index < 0 or index >= slot_order.size():
 		return
-
-	_persist_current_weapon_if_any()
-	current_weapon_index = index
-	current_weapon_data = weapons[index]
-	if _weapon_snapshots.has(index):
-		_restore_weapon_snapshot(_weapon_snapshots[index] as Dictionary)
-	else:
-		_apply_default_weapon_state()
-
-	_burst_remaining = 0
-	_burst_volley_shot_index = 0
-	_burst_timer = 0.0
-	_burst_delayed_recoil_id += 1
-	ammo_wheel_open = false
-	ammo_wheel_index = current_caliber_index
-	_reload_key_held = false
-	_empty_dry_fire_streak = 0
-
-	weapon_changed.emit(current_weapon_data)
-	fire_mode_changed.emit(get_current_fire_mode())
-	ammo_changed.emit(current_ammo, current_weapon_data.magazine_size)
-	if current_weapon_data.calibers.size() > 0:
-		caliber_changed.emit(get_current_caliber())
+	inventory.set_active_slot(StringName(slot_order[index]))
 
 
 func get_current_fire_mode() -> WeaponResource.FireMode:
@@ -178,14 +166,23 @@ func feed_wheel_mouse(delta: Vector2) -> void:
 
 
 func _handle_input() -> void:
-	if weapons.is_empty():
+	if inventory and inventory.inventory_open:
 		return
 
-	if Input.is_action_just_pressed("next_weapon"):
-		equip_weapon((current_weapon_index + 1) % weapons.size())
+	if inventory:
+		if Input.is_action_just_pressed("next_weapon"):
+			inventory.cycle_active_slot(1)
+		if Input.is_action_just_pressed("prev_weapon"):
+			inventory.cycle_active_slot(-1)
+		if Input.is_action_just_pressed("equip_slot_1"):
+			equip_weapon(0)
+		if Input.is_action_just_pressed("equip_slot_2"):
+			equip_weapon(1)
+		if Input.is_action_just_pressed("equip_slot_3"):
+			equip_weapon(2)
 
-	if Input.is_action_just_pressed("prev_weapon"):
-		equip_weapon((current_weapon_index - 1 + weapons.size()) % weapons.size())
+	if not current_weapon_data:
+		return
 
 	if Input.is_action_just_pressed("switch_fire_mode"):
 		cycle_fire_mode()
@@ -200,15 +197,14 @@ func _handle_input() -> void:
 		_try_cancel_shotgun_reload_for_fire()
 		if _is_reloading:
 			return
-		if current_weapon_data:
-			if current_ammo > 0:
+		if current_ammo > 0:
+			_empty_dry_fire_streak = 0
+		else:
+			_empty_dry_fire_streak += 1
+			if _empty_dry_fire_streak >= 2:
 				_empty_dry_fire_streak = 0
-			else:
-				_empty_dry_fire_streak += 1
-				if _empty_dry_fire_streak >= 2:
-					_empty_dry_fire_streak = 0
-					start_reload()
-				return
+				start_reload()
+			return
 		_try_fire()
 	elif Input.is_action_pressed("fire") and get_current_fire_mode() == WeaponResource.FireMode.AUTO:
 		_try_cancel_shotgun_reload_for_fire()
@@ -352,6 +348,15 @@ func _process_reload(delta: float) -> void:
 
 
 func _process_ammo_wheel(delta: float) -> void:
+	if inventory and inventory.inventory_open:
+		ammo_wheel_open = false
+		_reload_key_held = false
+		return
+	if not current_weapon_data:
+		ammo_wheel_open = false
+		_reload_key_held = false
+		return
+
 	if Input.is_action_just_pressed("reload"):
 		_reload_key_held = true
 		_reload_hold_time = 0.0
@@ -359,7 +364,7 @@ func _process_ammo_wheel(delta: float) -> void:
 
 	if _reload_key_held:
 		_reload_hold_time += delta
-		var has_options := current_weapon_data and current_weapon_data.calibers.size() > 1
+		var has_options := current_weapon_data.calibers.size() > 1
 		if _reload_hold_time >= WHEEL_HOLD_THRESHOLD and has_options:
 			ammo_wheel_open = true
 			_update_wheel_selection()
@@ -419,9 +424,9 @@ func _snapshot_current_weapon() -> Dictionary:
 
 
 func _persist_current_weapon_if_any() -> void:
-	if weapons.is_empty() or current_weapon_data == null:
+	if current_weapon_data == null:
 		return
-	_weapon_snapshots[current_weapon_index] = _snapshot_current_weapon()
+	_weapon_snapshots[current_weapon_data.weapon_name] = _snapshot_current_weapon()
 
 
 func _apply_default_weapon_state() -> void:
@@ -431,6 +436,19 @@ func _apply_default_weapon_state() -> void:
 	current_spread = current_weapon_data.base_spread
 	_stop_reload_state()
 	_empty_dry_fire_streak = 0
+
+
+func _clear_current_weapon_state() -> void:
+	current_caliber_index = 0
+	current_fire_mode_index = 0
+	current_ammo = 0
+	current_spread = 0.0
+	_stop_reload_state()
+	_empty_dry_fire_streak = 0
+	_burst_remaining = 0
+	_burst_volley_shot_index = 0
+	_burst_timer = 0.0
+	ammo_wheel_open = false
 
 
 func _restore_weapon_snapshot(s: Dictionary) -> void:
@@ -530,6 +548,44 @@ func _schedule_burst_delayed_recoil() -> void:
 	,
 		Object.CONNECT_ONE_SHOT
 	)
+
+
+func _on_active_weapon_changed(weapon: WeaponResource) -> void:
+	if current_weapon_data == weapon:
+		return
+
+	_persist_current_weapon_if_any()
+	current_weapon_data = weapon
+
+	_burst_remaining = 0
+	_burst_volley_shot_index = 0
+	_burst_timer = 0.0
+	_burst_delayed_recoil_id += 1
+	ammo_wheel_open = false
+	ammo_wheel_index = 0
+	_reload_key_held = false
+	_reload_hold_time = 0.0
+	_wheel_cursor = Vector2.ZERO
+
+	if current_weapon_data:
+		var snapshot_key := current_weapon_data.weapon_name
+		if _weapon_snapshots.has(snapshot_key):
+			_restore_weapon_snapshot(_weapon_snapshots[snapshot_key] as Dictionary)
+		else:
+			_apply_default_weapon_state()
+
+		ammo_wheel_index = current_caliber_index
+		weapon_changed.emit(current_weapon_data)
+		fire_mode_changed.emit(get_current_fire_mode())
+		ammo_changed.emit(current_ammo, current_weapon_data.magazine_size)
+		caliber_changed.emit(get_current_caliber())
+		return
+
+	_clear_current_weapon_state()
+	weapon_changed.emit(null)
+	fire_mode_changed.emit(WeaponResource.FireMode.SEMI)
+	ammo_changed.emit(0, 0)
+	caliber_changed.emit(null)
 
 
 func _resolve_camera() -> Camera3D:

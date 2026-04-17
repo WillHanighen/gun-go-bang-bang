@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://bbcrm4sq23iv" path="res://scripts/player/weapon_view.gd" id="7"]
 [ext_resource type="PackedScene" uid="uid://jiwliu8bimt0" path="res://assets/Colt Python/colt_python 1k.glb" id="8"]
 [ext_resource type="PackedScene" uid="uid://dg0gqlrvjl2kp" path="res://assets/Mossberg 590/mossberg_590_mariner 1k.glb" id="9"]
+[ext_resource type="Script" uid="uid://d3tq6dr6l8c3v" path="res://scripts/player/player_inventory.gd" id="10"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 radius = 0.3
@@ -16,21 +17,33 @@ height = 1.8
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_5gtgg"]
 
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_visor"]
+radius = 0.972
+height = 3.886
+radial_segments = 128
+rings = 16
+
 [node name="Player" type="CharacterBody3D" unique_id=1155665388 groups=["player"]]
 collision_layer = 2
 script = ExtResource("1")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=183723297]
+[node name="PillCollider" type="CollisionShape3D" parent="." unique_id=183723297]
 shape = SubResource("CapsuleShape3D_1")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=327328754]
+[node name="Pill" type="MeshInstance3D" parent="." unique_id=327328754]
 transform = Transform3D(0.6, 0, 0, 0, 0.9, 0, 0, 0, 0.6, 0, 0, 0)
 mesh = SubResource("CapsuleMesh_5gtgg")
+
+[node name="Visor" type="MeshInstance3D" parent="." unique_id=1418064359]
+transform = Transform3D(0, -0.12067869, 0, 0.25865397, 0, 0, 0, 0, 0.3, 0, 0.5, -0.06798734)
+layers = 2
+mesh = SubResource("CapsuleMesh_visor")
 
 [node name="Head" type="Node3D" parent="." unique_id=658671974]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Head" unique_id=1541799429]
+cull_mask = 1048573
 
 [node name="WeaponView" type="Node3D" parent="Head/Camera3D" unique_id=187935988]
 script = ExtResource("7")
@@ -73,3 +86,6 @@ visible = false
 
 [node name="WeaponManager" type="Node" parent="." unique_id=1362318429]
 script = ExtResource("2")
+
+[node name="PlayerInventory" type="Node" parent="." unique_id=1462318429]
+script = ExtResource("10")

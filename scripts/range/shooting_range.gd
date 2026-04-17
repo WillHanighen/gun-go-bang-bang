@@ -13,7 +13,6 @@ func _ready() -> void:
 	RangeTargetBuilderScript.build(self)
 	_spawn_player()
 	_create_hud()
-	_equip_player()
 
 
 # -- player + equip ------------------------------------------------------------
@@ -33,11 +32,3 @@ func _create_hud() -> void:
 	hud_ctrl.set_script(HUDScript)
 	hud_layer.add_child(hud_ctrl)
 	add_child(hud_layer)
-
-
-func _equip_player() -> void:
-	var weapon_manager: Node = player.get_node_or_null("WeaponManager")
-	if not weapon_manager:
-		return
-	weapon_manager.weapons = WeaponDatabase.weapons
-	weapon_manager.equip_weapon(0)

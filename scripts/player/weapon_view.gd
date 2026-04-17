@@ -15,6 +15,8 @@ func _ready() -> void:
 
 
 func _on_weapon_changed(weapon: WeaponResource) -> void:
+	for c in get_children():
+		c.visible = false
 	if not weapon:
 		return
 	var key := weapon.weapon_name.replace(" ", "_")

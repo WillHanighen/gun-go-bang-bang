@@ -34,11 +34,16 @@ const RECOIL_IMPACT_MULT := 1.75
 
 const MOVE_SPREAD_WALK_MAX := 1.32
 const MOVE_SPREAD_SPRINT_MAX := 1.52
+const INTERACTION_RAY_LENGTH := 6.0
+const INTERACTION_COLLISION_MASK := 16
 
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
 @onready var weapon_manager: Node = $WeaponManager
-@onready var collision_shape: CollisionShape3D = $CollisionShape3D
+@onready var inventory: PlayerInventory = $PlayerInventory
+@onready var collision_shape: CollisionShape3D = _resolve_collision_shape()
+
+signal interaction_prompt_changed(prompt: String)
 
 var is_aiming := false
 var is_sprinting := false
@@ -54,12 +59,14 @@ var _recoil_v_recover := 0.0
 var _recoil_h_recover := 0.0
 var _wall_jump_normal := Vector3.ZERO
 var _wall_jump_grace_timer := 0.0
+var _interaction_target: WeaponPickup
+var _interaction_prompt := ""
 
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	floor_snap_length = 0.25
-	var cap: CapsuleShape3D = collision_shape.shape as CapsuleShape3D
+	var cap := _get_capsule_shape()
 	if cap:
 		_capsule_radius = cap.radius
 		var total := cap.height + 2.0 * _capsule_radius
@@ -67,7 +74,12 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	is_aiming = Input.is_action_pressed("aim") and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED
+	var inventory_open := inventory != null and inventory.inventory_open
+	is_aiming = (
+		not inventory_open
+		and Input.is_action_pressed("aim")
+		and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED
+	)
 
 	var ads_time := 0.25
 	if weapon_manager and weapon_manager.current_weapon_data:
@@ -81,9 +93,35 @@ func _process(delta: float) -> void:
 
 	var t := _ads_progress * _ads_progress * (3.0 - 2.0 * _ads_progress)
 	camera.fov = lerpf(DEFAULT_FOV, ADS_FOV, t)
+	if inventory_open:
+		_set_interaction_target(null)
+	else:
+		_update_interaction_target()
+
+	if not inventory_open and Input.is_action_just_pressed("interact") and _interaction_target:
+		if _interaction_target.pick_up(self):
+			_set_interaction_target(null)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("toggleInventory") and inventory:
+		if event is InputEventKey and event.is_echo():
+			return
+		var next_open := not inventory.inventory_open
+		inventory.set_inventory_open(next_open)
+		Input.set_mouse_mode(
+			Input.MOUSE_MODE_VISIBLE if next_open else Input.MOUSE_MODE_CAPTURED
+		)
+		if next_open:
+			_set_interaction_target(null)
+		return
+
+	if inventory and inventory.inventory_open:
+		if event.is_action_pressed("ui_cancel"):
+			inventory.set_inventory_open(false)
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		return
+
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		if weapon_manager.ammo_wheel_open:
 			weapon_manager.feed_wheel_mouse(event.relative)
@@ -104,6 +142,10 @@ func _physics_process(delta: float) -> void:
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	var move_dir := (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	var jump_pressed := Input.is_action_just_pressed("jump")
+	if inventory and inventory.inventory_open:
+		input_dir = Vector2.ZERO
+		move_dir = Vector3.ZERO
+		jump_pressed = false
 	var on_floor := is_on_floor()
 
 	_update_crouch(delta, Input.is_action_pressed("crouch"))
@@ -306,7 +348,7 @@ func _recover_recoil(delta: float) -> void:
 func _can_stand() -> bool:
 	if _crouch_progress <= 0.01:
 		return true
-	var cap: CapsuleShape3D = collision_shape.shape as CapsuleShape3D
+	var cap := _get_capsule_shape()
 	if not cap:
 		return true
 
@@ -326,7 +368,7 @@ func _collision_center_y_for_cylinder(cyl_h: float) -> float:
 
 
 func _apply_crouch_capsule() -> void:
-	var cap: CapsuleShape3D = collision_shape.shape as CapsuleShape3D
+	var cap := _get_capsule_shape()
 	if not cap:
 		return
 	var cyl := lerpf(STANDING_CAPSULE_CYLINDER_H, CROUCH_CAPSULE_CYLINDER_H, _crouch_progress)
@@ -348,3 +390,58 @@ func get_spread_state() -> Dictionary:
 		"walk_spread_mult": MOVE_SPREAD_WALK_MAX,
 		"sprint_spread_mult": MOVE_SPREAD_SPRINT_MAX,
 	}
+
+
+func get_interaction_prompt() -> String:
+	return _interaction_prompt
+
+
+func _update_interaction_target() -> void:
+	if not camera:
+		_set_interaction_target(null)
+		return
+
+	var origin := camera.global_position
+	var query := PhysicsRayQueryParameters3D.create(
+		origin,
+		origin + (-camera.global_basis.z) * INTERACTION_RAY_LENGTH
+	)
+	query.collision_mask = INTERACTION_COLLISION_MASK
+	query.collide_with_bodies = false
+	query.collide_with_areas = true
+	query.exclude = [get_rid()]
+
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		_set_interaction_target(null)
+		return
+
+	var pickup := hit.get("collider") as WeaponPickup
+	if pickup and pickup.can_player_pick_up(origin):
+		_set_interaction_target(pickup)
+		return
+
+	_set_interaction_target(null)
+
+
+func _set_interaction_target(target: WeaponPickup) -> void:
+	var next_prompt := target.get_prompt_text_for(self) if target else ""
+	if _interaction_target == target and _interaction_prompt == next_prompt:
+		return
+
+	_interaction_target = target
+	_interaction_prompt = next_prompt
+	interaction_prompt_changed.emit(_interaction_prompt)
+
+
+func _resolve_collision_shape() -> CollisionShape3D:
+	var pill_collider := get_node_or_null("PillCollider") as CollisionShape3D
+	if pill_collider:
+		return pill_collider
+	return get_node_or_null("CollisionShape3D") as CollisionShape3D
+
+
+func _get_capsule_shape() -> CapsuleShape3D:
+	if not collision_shape:
+		return null
+	return collision_shape.shape as CapsuleShape3D

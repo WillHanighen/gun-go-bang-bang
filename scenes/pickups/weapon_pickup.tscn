@@ -1,0 +1,35 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/pickups/weapon_pickup.gd" id="1"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_pickup"]
+radius = 0.65
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_base"]
+top_radius = 0.22
+bottom_radius = 0.3
+height = 0.08
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_base"]
+albedo_color = Color(0.18, 0.18, 0.18, 1)
+metallic = 0.45
+roughness = 0.25
+
+[node name="WeaponPickup" type="Area3D"]
+collision_layer = 16
+collision_mask = 0
+monitoring = false
+script = ExtResource("1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_pickup")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+
+[node name="PickupBase" type="MeshInstance3D" parent="VisualRoot"]
+mesh = SubResource("CylinderMesh_base")
+surface_material_override/0 = SubResource("StandardMaterial3D_base")
+
+[node name="ModelAnchor" type="Node3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)

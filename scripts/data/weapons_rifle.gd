@@ -26,4 +26,7 @@ static func register(calibers: Dictionary, out_weapons: Array[WeaponResource]) -
 	m4a1.recoil_recovery_rate = 8.0
 	m4a1.recoil_mitigation = 0.1
 	m4a1.ads_time = 0.28
+	m4a1.carry_class = WeaponResource.CarryClass.LARGE
+	m4a1.inventory_width = 5
+	m4a1.inventory_height = 2
 	out_weapons.append(m4a1)
