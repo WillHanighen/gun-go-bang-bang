@@ -31,6 +31,13 @@ static func register(calibers: Dictionary, out_weapons: Array[WeaponResource]) -
 	colt_python.recoil_recovery_rate = 5.5
 	colt_python.recoil_mitigation = 0.0
 	colt_python.ads_time = 0.16
+	colt_python.hand_space = 1
+	colt_python.single_hand_spread_mult = 1.26
+	colt_python.single_hand_recoil_mult = 1.34
+	colt_python.offhand_spread_mult = 1.15
+	colt_python.offhand_recoil_mult = 1.24
+	colt_python.supported_spread_mult = 0.78
+	colt_python.supported_recoil_mult = 0.74
 	colt_python.carry_class = WeaponResource.CarryClass.MEDIUM
 	colt_python.inventory_width = 2
 	colt_python.inventory_height = 2
@@ -53,6 +60,13 @@ static func register(calibers: Dictionary, out_weapons: Array[WeaponResource]) -
 	m1911.recoil_recovery_rate = 5.5
 	m1911.recoil_mitigation = 0.05
 	m1911.ads_time = 0.15
+	m1911.hand_space = 1
+	m1911.single_hand_spread_mult = 1.18
+	m1911.single_hand_recoil_mult = 1.24
+	m1911.offhand_spread_mult = 1.1
+	m1911.offhand_recoil_mult = 1.14
+	m1911.supported_spread_mult = 0.74
+	m1911.supported_recoil_mult = 0.7
 	m1911.carry_class = WeaponResource.CarryClass.SMALL
 	m1911.inventory_width = 2
 	m1911.inventory_height = 1
@@ -86,7 +100,8 @@ static func register(calibers: Dictionary, out_weapons: Array[WeaponResource]) -
 	vector.burst_delayed_recoil_delay_sec = 0.09
 	vector.burst_delayed_recoil_impulse_strength = 0.5
 	vector.burst_delayed_recoil_horizontal_factor = 0.52
+	vector.hand_space = 2
 	vector.carry_class = WeaponResource.CarryClass.MEDIUM
-	vector.inventory_width = 3
+	vector.inventory_width = 4
 	vector.inventory_height = 2
 	out_weapons.append(vector)

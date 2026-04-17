@@ -31,6 +31,20 @@ enum CarryClass { SMALL, MEDIUM, LARGE, VERY_LARGE, MELEE }
 @export var inventory_width: int = 3
 @export var inventory_height: int = 2
 
+@export_group("Hand Space")
+## 1 = can share a loadout slot with another one-handed item, 2 = needs the whole loadout.
+@export_range(1, 2, 1) var hand_space: int = 2
+## Extra spread when firing a one-handed item without support from the other hand.
+@export_range(1.0, 3.0, 0.01) var single_hand_spread_mult: float = 1.25
+## Extra recoil when firing a one-handed item without support from the other hand.
+@export_range(1.0, 3.0, 0.01) var single_hand_recoil_mult: float = 1.3
+## Additional penalty for the off-hand item in a dual-wield setup.
+@export_range(1.0, 3.0, 0.01) var offhand_spread_mult: float = 1.12
+@export_range(1.0, 3.0, 0.01) var offhand_recoil_mult: float = 1.18
+## Bonus when the free hand supports the weapon instead of holding another item.
+@export_range(0.3, 1.0, 0.01) var supported_spread_mult: float = 0.82
+@export_range(0.3, 1.0, 0.01) var supported_recoil_mult: float = 0.78
+
 @export_group("Recoil")
 @export var recoil_vertical: float = 2.0
 @export var recoil_horizontal_range: float = 0.5
@@ -68,6 +82,36 @@ func get_effective_recoil_horizontal() -> float:
 
 func get_inventory_size() -> Vector2i:
 	return Vector2i(maxi(inventory_width, 1), maxi(inventory_height, 1))
+
+
+func is_one_handed() -> bool:
+	return hand_space <= 1
+
+
+func requires_full_hands() -> bool:
+	return not is_one_handed()
+
+
+func get_spread_multiplier(is_offhand: bool, has_support_hand: bool) -> float:
+	if not is_one_handed():
+		return 1.0
+	if has_support_hand:
+		return supported_spread_mult
+	var mult := single_hand_spread_mult
+	if is_offhand:
+		mult *= offhand_spread_mult
+	return mult
+
+
+func get_recoil_multiplier(is_offhand: bool, has_support_hand: bool) -> float:
+	if not is_one_handed():
+		return 1.0
+	if has_support_hand:
+		return supported_recoil_mult
+	var mult := single_hand_recoil_mult
+	if is_offhand:
+		mult *= offhand_recoil_mult
+	return mult
 
 
 func fits_equipment_slot(slot_name: StringName) -> bool:

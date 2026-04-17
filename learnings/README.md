@@ -11,6 +11,18 @@ Use focused files in `learnings/*.md` to record:
 
 Prefer small, topic-specific files over one giant notes file.
 
+## Local notes
+
+Use `learnings/local/` for machine-specific notes that are useful while working in this repo but should not be committed.
+
+Examples:
+
+- where a tool is installed on this specific machine
+- local runtime paths
+- personal workflow notes that only apply to this environment
+
+Keep shared project behavior in `learnings/*.md`, and keep local environment details in `learnings/local/*.md`.
+
 ## Good structure
 
 Each learning doc should usually include:

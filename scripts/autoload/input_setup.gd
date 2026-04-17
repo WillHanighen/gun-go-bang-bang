@@ -20,8 +20,9 @@ func _ready() -> void:
 	_add_key("interact", KEY_F)
 	_add_key("toggleInventory", KEY_TAB)
 	
-	_add_mouse("fire", MOUSE_BUTTON_LEFT)
-	_add_mouse("aim", MOUSE_BUTTON_RIGHT)
+	_set_mouse("fire", MOUSE_BUTTON_LEFT)
+	_set_mouse("fire_hand_2", MOUSE_BUTTON_RIGHT)
+	_set_mouse("aim", MOUSE_BUTTON_MIDDLE)
 
 
 func _add_key(action: String, keycode: Key) -> void:
@@ -38,3 +39,12 @@ func _add_mouse(action: String, button: MouseButton) -> void:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = button
 	InputMap.action_add_event(action, ev)
+
+
+func _set_mouse(action: String, button: MouseButton) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	for event in InputMap.action_get_events(action):
+		if event is InputEventMouseButton:
+			InputMap.action_erase_event(action, event)
+	_add_mouse(action, button)

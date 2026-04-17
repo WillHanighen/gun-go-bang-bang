@@ -1,6 +1,10 @@
 extends Control
 
 const InventoryPanelScript := preload("res://scripts/ui/inventory_panel.gd")
+const HAND_1 := &"hand_1"
+const HAND_2 := &"hand_2"
+const STATUS_PANEL_WIDTH := 340.0
+const STATUS_PANEL_MARGIN := 12.0
 
 var weapon_label: Label
 var ammo_label: Label
@@ -10,6 +14,7 @@ var hit_info_label: Label
 var controls_label: Label
 var interaction_prompt_label: Label
 var inventory_panel: Control
+var status_panel: VBoxContainer
 
 var _hit_info_timer: float = 0.0
 
@@ -32,6 +37,12 @@ func _ready() -> void:
 	_build_ui()
 	await get_tree().process_frame
 	_connect_signals()
+	_layout_status_panel()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_layout_status_panel()
 
 
 func _process(delta: float) -> void:
@@ -51,7 +62,14 @@ func _process(delta: float) -> void:
 func _update_crosshair() -> void:
 	if not _wm:
 		return
-	var caliber: CaliberResource = _wm.get_current_caliber() if _wm.current_weapon_data else null
+	var caliber: CaliberResource = null
+	for hand in [HAND_1, HAND_2]:
+		var candidate: CaliberResource = _wm.get_hand_caliber(hand)
+		if candidate and candidate.pellet_count > 1:
+			caliber = candidate
+			break
+		if candidate and caliber == null:
+			caliber = candidate
 	var target_px: float = _wm.get_crosshair_pixels(size)
 	_shotgun_crosshair = caliber != null and caliber.pellet_count > 1
 	if _shotgun_crosshair:
@@ -86,7 +104,8 @@ func _draw() -> void:
 
 
 func _draw_ammo_wheel(center: Vector2) -> void:
-	var weapon: WeaponResource = _wm.current_weapon_data
+	var wheel_hand: StringName = _wm.get_ammo_wheel_hand()
+	var weapon: WeaponResource = _wm.get_hand_weapon(wheel_hand)
 	if not weapon:
 		return
 	var count := weapon.calibers.size()
@@ -103,7 +122,8 @@ func _draw_ammo_wheel(center: Vector2) -> void:
 	draw_circle(center, radius + 55.0, Color(0, 0, 0, 0.65))
 	draw_arc(center, radius + 55.0, 0.0, TAU, 64, Color(0.4, 0.4, 0.4, 0.4), 1.5)
 
-	draw_string(font, center + Vector2(-text_w / 2.0, -6), "SELECT AMMO",
+	var hand_label := "HAND 2" if wheel_hand == HAND_2 else "HAND 1"
+	draw_string(font, center + Vector2(-text_w / 2.0, -6), "SELECT AMMO (%s)" % hand_label,
 		HORIZONTAL_ALIGNMENT_CENTER, text_w, font_size_hint, Color(0.6, 0.6, 0.6))
 	draw_string(font, center + Vector2(-text_w / 2.0, 10), "release R to confirm",
 		HORIZONTAL_ALIGNMENT_CENTER, text_w, font_size_hint - 2, Color(0.45, 0.45, 0.45))
@@ -115,7 +135,7 @@ func _draw_ammo_wheel(center: Vector2) -> void:
 
 		var cal: CaliberResource = weapon.calibers[i]
 		var selected: bool = (i == _wm.ammo_wheel_index)
-		var is_current: bool = (i == _wm.current_caliber_index)
+		var is_current: bool = (i == _wm.get_hand_caliber_index(wheel_hand))
 
 		if selected:
 			draw_circle(pos, 42.0, Color(1.0, 0.8, 0.2, 0.25))
@@ -139,28 +159,22 @@ func _draw_ammo_wheel(center: Vector2) -> void:
 
 
 func _build_ui() -> void:
-	var panel := VBoxContainer.new()
-	panel.anchor_left = 1.0
-	panel.anchor_top = 1.0
-	panel.anchor_right = 1.0
-	panel.anchor_bottom = 1.0
-	panel.offset_left = -260
-	panel.offset_top = -130
-	panel.offset_right = -10
-	panel.offset_bottom = -10
-	add_child(panel)
+	status_panel = VBoxContainer.new()
+	status_panel.custom_minimum_size = Vector2(STATUS_PANEL_WIDTH, 0.0)
+	status_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(status_panel)
 
 	weapon_label = _make_label(20, Color.WHITE)
-	panel.add_child(weapon_label)
+	status_panel.add_child(weapon_label)
 
 	caliber_label = _make_label(14, Color(0.7, 0.7, 0.7))
-	panel.add_child(caliber_label)
+	status_panel.add_child(caliber_label)
 
 	fire_mode_label = _make_label(16, Color(1.0, 0.8, 0.3))
-	panel.add_child(fire_mode_label)
+	status_panel.add_child(fire_mode_label)
 
 	ammo_label = _make_label(24, Color.WHITE)
-	panel.add_child(ammo_label)
+	status_panel.add_child(ammo_label)
 
 	hit_info_label = Label.new()
 	hit_info_label.anchor_left = 0.5
@@ -182,7 +196,7 @@ func _build_ui() -> void:
 	controls_label.offset_top = 8
 	controls_label.offset_bottom = 28
 	controls_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	controls_label.text = "WASD: Move | Ctrl: Crouch | F: Interact | Tab: Inventory | LMB: Fire | R: Reload (hold: ammo wheel) | V: Fire Mode | Q/E: Weapon | X: Quick Swap | Esc: Cursor"
+	controls_label.text = "WASD: Move | Ctrl: Crouch | F: Interact | Tab: Inventory | LMB: Hand 1 | RMB: Hand 2 | MMB: Aim | R / Alt+R: Reload | V / Alt+V: Fire Mode | X / Alt+X: Ammo | Q/E: Loadout | Esc: Cursor"
 	controls_label.add_theme_font_size_override("font_size", 12)
 	controls_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 0.6))
 	add_child(controls_label)
@@ -210,6 +224,8 @@ func _make_label(font_size: int, color: Color) -> Label:
 	var lbl := Label.new()
 	lbl.add_theme_font_size_override("font_size", font_size)
 	lbl.add_theme_color_override("font_color", color)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return lbl
 
 
@@ -234,12 +250,11 @@ func _connect_signals() -> void:
 	_wm.fire_mode_changed.connect(_on_fire_mode_changed)
 	_wm.hit_registered.connect(_on_hit_registered)
 	_wm.caliber_changed.connect(_on_caliber_changed)
-	_wm.reload_started.connect(func(): ammo_label.text = "RELOADING...")
+	_wm.loadout_changed.connect(_on_loadout_changed)
+	_wm.reload_started.connect(_refresh_loadout)
 
 	if _wm.current_weapon_data:
-		_on_weapon_changed(_wm.current_weapon_data)
-		_on_ammo_changed(_wm.current_ammo, _wm.current_weapon_data.magazine_size)
-		_on_fire_mode_changed(_wm.get_current_fire_mode())
+		_refresh_loadout()
 	else:
 		_on_weapon_changed(null)
 		_on_ammo_changed(0, 0)
@@ -250,43 +265,24 @@ func _on_interaction_prompt_changed(prompt: String) -> void:
 	interaction_prompt_label.text = prompt
 
 
-func _on_weapon_changed(weapon: WeaponResource) -> void:
-	if not weapon:
-		weapon_label.text = "UNARMED"
-		caliber_label.text = ""
-		fire_mode_label.text = ""
-		return
-	weapon_label.text = weapon.weapon_name
-	if weapon.calibers.size() > 0:
-		var suffix := "  [hold R]" if weapon.calibers.size() > 1 else ""
-		caliber_label.text = weapon.calibers[0].caliber_name + suffix
+func _on_weapon_changed(_weapon: WeaponResource) -> void:
+	_refresh_loadout()
 
 
-func _on_ammo_changed(current: int, max_ammo: int) -> void:
-	if max_ammo <= 0:
-		ammo_label.text = ""
-		return
-	ammo_label.text = "%d / %d" % [current, max_ammo]
+func _on_ammo_changed(_current: int, _max_ammo: int) -> void:
+	_refresh_loadout()
 
 
-func _on_fire_mode_changed(mode: WeaponResource.FireMode) -> void:
-	if not _wm or not _wm.current_weapon_data:
-		fire_mode_label.text = ""
-		return
-	var names := {
-		WeaponResource.FireMode.SEMI: "SEMI",
-		WeaponResource.FireMode.BURST: "BURST",
-		WeaponResource.FireMode.AUTO: "AUTO",
-		WeaponResource.FireMode.PUMP: "PUMP",
-	}
-	fire_mode_label.text = names.get(mode, "???")
+func _on_fire_mode_changed(_mode: WeaponResource.FireMode) -> void:
+	_refresh_loadout()
 
 
-func _on_caliber_changed(caliber: CaliberResource) -> void:
-	if caliber:
-		caliber_label.text = caliber.caliber_name + "  [hold R]"
-	else:
-		caliber_label.text = ""
+func _on_caliber_changed(_caliber: CaliberResource) -> void:
+	_refresh_loadout()
+
+
+func _on_loadout_changed(_loadout: Dictionary) -> void:
+	_refresh_loadout()
 
 
 func _on_hit_registered(distance: float, damage: float, _target_name: String) -> void:
@@ -301,9 +297,10 @@ func _finalize_volley() -> void:
 	var yards := _volley_dist / 0.9144
 	var parts: PackedStringArray = []
 
-	var weapon: WeaponResource = _wm.current_weapon_data if _wm else null
-	var caliber: CaliberResource = _wm.get_current_caliber() if _wm else null
-	var mode: WeaponResource.FireMode = _wm.get_current_fire_mode() if _wm else WeaponResource.FireMode.SEMI
+	var hand: StringName = _wm.get_last_fired_hand() if _wm else HAND_1
+	var weapon: WeaponResource = _wm.get_hand_weapon(hand) if _wm else null
+	var caliber: CaliberResource = _wm.get_hand_caliber(hand) if _wm else null
+	var mode: WeaponResource.FireMode = _wm.get_hand_fire_mode(hand) if _wm else WeaponResource.FireMode.SEMI
 
 	if _volley_hits > 1 and caliber and caliber.pellet_count > 1:
 		parts.append("%d/%d pellets" % [_volley_hits, caliber.pellet_count])
@@ -332,3 +329,87 @@ func _finalize_volley() -> void:
 	_volley_hits = 0
 	_volley_dist = 0.0
 	_volley_target = ""
+
+
+func _refresh_loadout() -> void:
+	if not _wm:
+		return
+	var loadout: Dictionary = _wm.get_loadout()
+	var hand_1 := _format_hand_line(HAND_1, loadout.get(HAND_1, {}) as Dictionary)
+	var hand_2 := _format_hand_line(HAND_2, loadout.get(HAND_2, {}) as Dictionary)
+	if hand_1.is_empty() and hand_2.is_empty():
+		weapon_label.text = "UNARMED"
+		caliber_label.text = ""
+		fire_mode_label.text = ""
+		ammo_label.text = ""
+		return
+
+	weapon_label.text = hand_1
+	if not hand_2.is_empty():
+		weapon_label.text += "\n" + hand_2
+
+	var caliber_lines: PackedStringArray = []
+	var fire_mode_lines: PackedStringArray = []
+	var ammo_lines: PackedStringArray = []
+	for hand in [HAND_1, HAND_2]:
+		var hand_entry := loadout.get(hand, {}) as Dictionary
+		if hand_entry.is_empty():
+			continue
+		var hand_label := "H2" if hand == HAND_2 else "H1"
+		var caliber: CaliberResource = _wm.get_hand_caliber(hand)
+		var caliber_line := "%s %s" % [hand_label, caliber.caliber_name if caliber else "NO CAL"]
+		if _wm.get_hand_weapon(hand) and _wm.get_hand_weapon(hand).calibers.size() > 1:
+			caliber_line += "  [hold %sR]" % ("Alt+" if hand == HAND_2 else "")
+		caliber_lines.append(caliber_line)
+
+		var mode_name := _mode_name(_wm.get_hand_fire_mode(hand))
+		fire_mode_lines.append("%s %s" % [hand_label, mode_name])
+
+		var ammo_line := "%s %d / %d" % [hand_label, _wm.get_hand_ammo(hand), _wm.get_hand_max_ammo(hand)]
+		if _wm.is_hand_reloading(hand):
+			ammo_line += "  RELOADING"
+		ammo_lines.append(ammo_line)
+
+	caliber_label.text = "\n".join(caliber_lines)
+	fire_mode_label.text = "\n".join(fire_mode_lines)
+	ammo_label.text = "\n".join(ammo_lines)
+	_layout_status_panel()
+
+
+func _format_hand_line(hand: StringName, hand_entry: Dictionary) -> String:
+	if hand_entry.is_empty():
+		return ""
+	var weapon := hand_entry.get("weapon") as WeaponResource
+	if not weapon:
+		return ""
+	var hand_label := "H2" if hand == HAND_2 else "H1"
+	var suffix := ""
+	if bool(hand_entry.get("has_support_hand", false)):
+		suffix = "  [2H support]"
+	elif bool(hand_entry.get("is_offhand", false)):
+		suffix = "  [off-hand]"
+	elif bool(_wm.get_loadout().get("two_handed", false)):
+		suffix = "  [2H]"
+	return "%s %s%s" % [hand_label, weapon.weapon_name, suffix]
+
+
+func _mode_name(mode: WeaponResource.FireMode) -> String:
+	var names := {
+		WeaponResource.FireMode.SEMI: "SEMI",
+		WeaponResource.FireMode.BURST: "BURST",
+		WeaponResource.FireMode.AUTO: "AUTO",
+		WeaponResource.FireMode.PUMP: "PUMP",
+	}
+	return names.get(mode, "???")
+
+
+func _layout_status_panel() -> void:
+	if not status_panel:
+		return
+	var min_size := status_panel.get_combined_minimum_size()
+	min_size.x = maxf(min_size.x, STATUS_PANEL_WIDTH)
+	status_panel.size = min_size
+	status_panel.position = Vector2(
+		maxf(size.x - min_size.x - STATUS_PANEL_MARGIN, STATUS_PANEL_MARGIN),
+		maxf(size.y - min_size.y - STATUS_PANEL_MARGIN, STATUS_PANEL_MARGIN)
+	)

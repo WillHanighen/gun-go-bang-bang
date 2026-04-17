@@ -3,6 +3,7 @@ extends Node
 
 signal inventory_changed()
 signal active_weapon_changed(weapon: WeaponResource)
+signal active_loadout_changed(loadout: Dictionary)
 signal inventory_open_changed(is_open: bool)
 
 const SLOT_PRIMARY := &"primary"
@@ -18,14 +19,14 @@ const SLOT_LABELS := {
 	SLOT_BACKPACK: "BACKPACK",
 }
 const SLOT_DESCRIPTIONS := {
-	SLOT_PRIMARY: "Any gun",
-	SLOT_SECONDARY: "Medium or smaller / melee",
+	SLOT_PRIMARY: "Any weapon",
+	SLOT_SECONDARY: "Medium or smaller",
 	SLOT_MELEE: "Melee only",
 	SLOT_BACKPACK: "General storage",
 }
 const SLOT_SIZES := {
 	SLOT_PRIMARY: Vector2i(6, 3),
-	SLOT_SECONDARY: Vector2i(3, 2),
+	SLOT_SECONDARY: Vector2i(4, 2),
 	SLOT_MELEE: Vector2i(3, 1),
 	SLOT_BACKPACK: Vector2i(12, 7),
 }
@@ -46,7 +47,7 @@ func set_inventory_open(is_open: bool) -> void:
 
 func get_items() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for id in _items.keys():
+	for id in _sorted_item_ids():
 		var entry: Dictionary = (_items[id] as Dictionary).duplicate()
 		out.append(entry)
 	return out
@@ -79,17 +80,35 @@ func get_active_slot() -> StringName:
 
 
 func get_active_weapon() -> WeaponResource:
-	var entry := _get_slot_item(active_slot)
-	if entry.is_empty():
+	var loadout := get_active_loadout()
+	var hand := loadout.get("hand_1", {}) as Dictionary
+	if hand.is_empty():
 		return null
-	return entry.get("weapon") as WeaponResource
+	return hand.get("weapon") as WeaponResource
 
 
 func get_weapon_in_slot(slot_name: StringName) -> WeaponResource:
-	var entry := _get_slot_item(slot_name)
-	if entry.is_empty():
+	var loadout := get_loadout_for_slot(slot_name)
+	var hand := loadout.get("hand_1", {}) as Dictionary
+	if hand.is_empty():
 		return null
-	return entry.get("weapon") as WeaponResource
+	return hand.get("weapon") as WeaponResource
+
+
+func get_active_loadout() -> Dictionary:
+	return get_loadout_for_slot(active_slot)
+
+
+func get_loadout_for_slot(slot_name: StringName) -> Dictionary:
+	return _build_loadout(slot_name, get_items_in_container(slot_name))
+
+
+func get_items_in_container(container: StringName) -> Array[Dictionary]:
+	var entries := _get_container_entries(container)
+	var out: Array[Dictionary] = []
+	for entry in entries:
+		out.append(entry.duplicate())
+	return out
 
 
 func is_equipment_slot(slot_name: StringName) -> bool:
@@ -97,13 +116,13 @@ func is_equipment_slot(slot_name: StringName) -> bool:
 
 
 func has_room_for_weapon(weapon: WeaponResource) -> bool:
-	if not weapon or _has_weapon_name(weapon.weapon_name):
+	if not weapon:
 		return false
 	return not _find_auto_placement(weapon).is_empty()
 
 
 func add_weapon(weapon: WeaponResource, auto_activate: bool = true) -> int:
-	if not weapon or _has_weapon_name(weapon.weapon_name):
+	if not weapon:
 		return -1
 
 	var placement := _find_auto_placement(weapon)
@@ -122,7 +141,7 @@ func add_weapon(weapon: WeaponResource, auto_activate: bool = true) -> int:
 	}
 
 	var preferred_slot := StringName(placement.get("container", SLOT_BACKPACK))
-	_refresh_active_weapon(
+	_refresh_active_selection(
 		previous_weapon,
 		preferred_slot if auto_activate and is_equipment_slot(preferred_slot) else &""
 	)
@@ -159,7 +178,7 @@ func move_item(
 	entry["rotated"] = rotated
 	_items[item_id] = entry
 
-	_refresh_active_weapon(previous_weapon, target_container if is_equipment_slot(target_container) else &"")
+	_refresh_active_selection(previous_weapon, target_container if is_equipment_slot(target_container) else &"")
 	inventory_changed.emit()
 	return true
 
@@ -244,7 +263,7 @@ func swap_items(
 	_items[item_id] = item_entry
 	_items[target_item_id] = displaced_entry
 
-	_refresh_active_weapon(previous_weapon, StringName(swap_plan.get("preferred_slot", &"")))
+	_refresh_active_selection(previous_weapon, StringName(swap_plan.get("preferred_slot", &"")))
 	inventory_changed.emit()
 	return true
 
@@ -295,26 +314,28 @@ func quick_transfer_item(item_id: int) -> bool:
 func set_active_slot(slot_name: StringName) -> void:
 	if not is_equipment_slot(slot_name):
 		return
-	if _get_slot_item(slot_name).is_empty():
+	if not _has_items_in_container(slot_name):
 		return
 	if active_slot == slot_name:
 		return
 
+	var previous_weapon := get_active_weapon()
 	active_slot = slot_name
-	active_weapon_changed.emit(get_active_weapon())
+	_emit_active_selection_changed(previous_weapon)
 	inventory_changed.emit()
 
 
 func cycle_active_slot(step: int) -> void:
 	var occupied_slots: Array[StringName] = []
 	for slot in SLOT_ORDER:
-		if not _get_slot_item(slot).is_empty():
+		if _has_items_in_container(slot):
 			occupied_slots.append(slot)
 
 	if occupied_slots.is_empty():
 		if get_active_weapon() != null:
+			var previous_weapon := get_active_weapon()
 			active_slot = SLOT_PRIMARY
-			active_weapon_changed.emit(null)
+			_emit_active_selection_changed(previous_weapon)
 			inventory_changed.emit()
 		return
 
@@ -340,33 +361,37 @@ func _find_auto_placement(weapon: WeaponResource) -> Dictionary:
 
 
 func _find_quick_equip_placement(weapon: WeaponResource) -> Dictionary:
-	if weapon.fits_equipment_slot(SLOT_MELEE) and _get_slot_item(SLOT_MELEE).is_empty():
-		return {"container": SLOT_MELEE, "position": Vector2i.ZERO, "rotated": false}
-
-	if weapon.fits_equipment_slot(SLOT_SECONDARY) and _get_slot_item(SLOT_SECONDARY).is_empty():
-		return {"container": SLOT_SECONDARY, "position": Vector2i.ZERO, "rotated": false}
-
-	if weapon.fits_equipment_slot(SLOT_PRIMARY) and _get_slot_item(SLOT_PRIMARY).is_empty():
-		return {"container": SLOT_PRIMARY, "position": Vector2i.ZERO, "rotated": false}
+	for slot_name in [SLOT_MELEE, SLOT_SECONDARY, SLOT_PRIMARY]:
+		if not weapon.fits_equipment_slot(slot_name):
+			continue
+		var slot_position := _find_first_fit_excluding(slot_name, weapon, false, [])
+		if slot_position.x < 0:
+			continue
+		return {"container": slot_name, "position": slot_position, "rotated": false}
 
 	return {}
 
 
-func _refresh_active_weapon(previous_weapon: WeaponResource = null, preferred_slot: StringName = &"") -> void:
-	if preferred_slot != &"" and is_equipment_slot(preferred_slot) and not _get_slot_item(preferred_slot).is_empty():
+func _refresh_active_selection(previous_weapon: WeaponResource = null, preferred_slot: StringName = &"") -> void:
+	if preferred_slot != &"" and is_equipment_slot(preferred_slot) and _has_items_in_container(preferred_slot):
 		active_slot = preferred_slot
-	elif _get_slot_item(active_slot).is_empty():
+	elif not _has_items_in_container(active_slot):
 		var fallback_slot := _get_first_occupied_slot()
 		active_slot = fallback_slot if fallback_slot != &"" else SLOT_PRIMARY
 
+	_emit_active_selection_changed(previous_weapon)
+
+
+func _emit_active_selection_changed(previous_weapon: WeaponResource = null) -> void:
 	var current_weapon := get_active_weapon()
 	if current_weapon != previous_weapon:
 		active_weapon_changed.emit(current_weapon)
+	active_loadout_changed.emit(get_active_loadout())
 
 
 func _get_first_occupied_slot() -> StringName:
 	for slot in SLOT_ORDER:
-		if not _get_slot_item(slot).is_empty():
+		if _has_items_in_container(slot):
 			return slot
 	return &""
 
@@ -481,25 +506,26 @@ func _can_place_weapon_excluding(
 
 	var normalized_position := _normalize_position(container, position)
 	var item_size := _get_weapon_size(weapon, rotated)
-	if not is_equipment_slot(container):
-		if normalized_position.x < 0 or normalized_position.y < 0:
-			return false
-		if normalized_position.x + item_size.x > container_size.x:
-			return false
-		if normalized_position.y + item_size.y > container_size.y:
-			return false
-	else:
+	if normalized_position.x < 0 or normalized_position.y < 0:
+		return false
+	if normalized_position.x + item_size.x > container_size.x:
+		return false
+	if normalized_position.y + item_size.y > container_size.y:
+		return false
+	if is_equipment_slot(container):
 		if not weapon.fits_equipment_slot(container):
 			return false
-		if item_size.x > container_size.x or item_size.y > container_size.y:
+		if rotated:
 			return false
 
-	for other_id in _items.keys():
-		if ignore_item_ids.has(int(other_id)):
-			continue
-		var other_entry := _items[other_id] as Dictionary
-		if other_entry.get("container", SLOT_BACKPACK) != container:
-			continue
+	var other_entries := _get_container_entries(container, ignore_item_ids)
+	if is_equipment_slot(container):
+		if other_entries.size() >= _get_equipment_item_limit(container):
+			return false
+		if not _can_share_equipment_container(weapon, other_entries):
+			return false
+
+	for other_entry in other_entries:
 		var other_weapon := other_entry.get("weapon") as WeaponResource
 		if not other_weapon:
 			continue
@@ -582,27 +608,21 @@ func _find_swap_destination_for_item(
 	target_rotated: bool,
 	ignore_item_ids: Array
 ) -> Dictionary:
-	if target_container == SLOT_BACKPACK:
-		return _find_backpack_placement_for_weapon(
-			weapon,
-			target_position,
-			target_rotated,
-			ignore_item_ids
-		)
-
+	var resolved_rotated := target_rotated if target_container == SLOT_BACKPACK else false
+	var normalized_target_position := _normalize_position(target_container, target_position)
 	if not _can_place_weapon_excluding(
 		weapon,
 		target_container,
-		Vector2i.ZERO,
-		false,
+		normalized_target_position,
+		resolved_rotated,
 		ignore_item_ids
 	):
 		return {}
 
 	return {
 		"container": target_container,
-		"position": Vector2i.ZERO,
-		"rotated": false,
+		"position": normalized_target_position,
+		"rotated": resolved_rotated,
 	}
 
 
@@ -617,8 +637,8 @@ func _get_preferred_slot_for_swap(
 	return &""
 
 
-func _normalize_position(container: StringName, position: Vector2i) -> Vector2i:
-	return position if container == SLOT_BACKPACK else Vector2i.ZERO
+func _normalize_position(_container: StringName, position: Vector2i) -> Vector2i:
+	return position
 
 
 func _rects_overlap(pos_a: Vector2i, size_a: Vector2i, pos_b: Vector2i, size_b: Vector2i) -> bool:
@@ -651,18 +671,101 @@ func _get_entry(item_id: int) -> Dictionary:
 	return _items[item_id] as Dictionary
 
 
-func _get_slot_item(slot_name: StringName) -> Dictionary:
-	for item_id in _items.keys():
+func _get_container_entries(container: StringName, ignore_item_ids: Array = []) -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	for item_id in _sorted_item_ids():
+		if ignore_item_ids.has(item_id):
+			continue
 		var entry := _items[item_id] as Dictionary
-		if entry.get("container", SLOT_BACKPACK) == slot_name:
-			return entry
-	return {}
+		if entry.get("container", SLOT_BACKPACK) != container:
+			continue
+		entries.append(entry)
+	entries.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			var pos_a: Vector2i = a.get("position", Vector2i.ZERO)
+			var pos_b: Vector2i = b.get("position", Vector2i.ZERO)
+			if pos_a.y != pos_b.y:
+				return pos_a.y < pos_b.y
+			if pos_a.x != pos_b.x:
+				return pos_a.x < pos_b.x
+			return int(a.get("id", -1)) < int(b.get("id", -1))
+	)
+	return entries
 
 
-func _has_weapon_name(weapon_name: String) -> bool:
-	for entry_value in _items.values():
-		var entry := entry_value as Dictionary
-		var weapon := entry.get("weapon") as WeaponResource
-		if weapon and weapon.weapon_name == weapon_name:
+func _sorted_item_ids() -> Array[int]:
+	var ids: Array[int] = []
+	for item_id in _items.keys():
+		ids.append(int(item_id))
+	ids.sort()
+	return ids
+
+
+func _has_items_in_container(container: StringName) -> bool:
+	for entry in _items.values():
+		if (entry as Dictionary).get("container", SLOT_BACKPACK) == container:
 			return true
 	return false
+
+
+func _get_equipment_item_limit(container: StringName) -> int:
+	if container == SLOT_MELEE:
+		return 1
+	return 2
+
+
+func _can_share_equipment_container(weapon: WeaponResource, existing_entries: Array[Dictionary]) -> bool:
+	if existing_entries.is_empty():
+		return true
+	if not weapon.is_one_handed():
+		return false
+	for entry in existing_entries:
+		var other_weapon := entry.get("weapon") as WeaponResource
+		if other_weapon and not other_weapon.is_one_handed():
+			return false
+	return true
+
+
+func _build_loadout(slot_name: StringName, slot_entries: Array[Dictionary]) -> Dictionary:
+	var loadout := {
+		"slot": slot_name,
+		"items": slot_entries,
+		"hand_1": {},
+		"hand_2": {},
+		"two_handed": false,
+		"supported": false,
+	}
+	if not is_equipment_slot(slot_name) or slot_entries.is_empty():
+		return loadout
+
+	var first_entry := slot_entries[0]
+	var first_weapon := first_entry.get("weapon") as WeaponResource
+	if not first_weapon:
+		return loadout
+
+	if first_weapon.requires_full_hands():
+		loadout["hand_1"] = _make_hand_loadout_entry(first_entry, false, false)
+		loadout["two_handed"] = true
+		return loadout
+
+	var hand_1 := _make_hand_loadout_entry(first_entry, false, slot_entries.size() == 1)
+	loadout["hand_1"] = hand_1
+	if slot_entries.size() == 1:
+		loadout["supported"] = true
+		return loadout
+
+	loadout["hand_2"] = _make_hand_loadout_entry(slot_entries[1], true, false)
+	return loadout
+
+
+func _make_hand_loadout_entry(entry: Dictionary, is_offhand: bool, has_support_hand: bool) -> Dictionary:
+	var weapon := entry.get("weapon") as WeaponResource
+	return {
+		"id": int(entry.get("id", -1)),
+		"weapon": weapon,
+		"container": StringName(entry.get("container", SLOT_BACKPACK)),
+		"position": entry.get("position", Vector2i.ZERO),
+		"rotated": bool(entry.get("rotated", false)),
+		"is_offhand": is_offhand,
+		"has_support_hand": has_support_hand,
+	}

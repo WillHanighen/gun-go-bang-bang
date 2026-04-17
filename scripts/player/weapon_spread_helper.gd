@@ -12,7 +12,8 @@ static func build_profile(
 	weapon: WeaponResource,
 	caliber: CaliberResource,
 	current_spread: float,
-	is_burst_compensated: bool
+	is_burst_compensated: bool,
+	spread_multiplier: float = 1.0
 ) -> Dictionary:
 	var state := _get_player_spread_state(player)
 	var bullet_spread := current_spread
@@ -34,6 +35,9 @@ static func build_profile(
 	if is_burst_compensated and weapon:
 		bullet_spread *= weapon.burst_compensation_spread_mult
 		pellet_spread *= weapon.burst_compensation_spread_mult
+
+	bullet_spread *= spread_multiplier
+	pellet_spread *= spread_multiplier
 
 	return {
 		"bullet_spread_deg": bullet_spread,

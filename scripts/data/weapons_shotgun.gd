@@ -5,7 +5,7 @@ extends RefCounted
 
 static func register(calibers: Dictionary, out_weapons: Array[WeaponResource]) -> void:
 	var cal_12ga: Array[CaliberResource] = [
-		calibers["12_00buck"], calibers["12_4buck"],
+		calibers["12_00buck"], calibers["12_000buck"], calibers["12_4buck"],
 		calibers["12_slug"], calibers["12_ap_slug"],
 	]
 
@@ -27,8 +27,9 @@ static func register(calibers: Dictionary, out_weapons: Array[WeaponResource]) -
 	r870.recoil_recovery_rate = 4.0
 	r870.recoil_mitigation = 0.0
 	r870.ads_time = 0.35
+	r870.hand_space = 2
 	r870.carry_class = WeaponResource.CarryClass.LARGE
-	r870.inventory_width = 5
+	r870.inventory_width = 6
 	r870.inventory_height = 2
 	out_weapons.append(r870)
 
@@ -50,7 +51,8 @@ static func register(calibers: Dictionary, out_weapons: Array[WeaponResource]) -
 	moss590.recoil_recovery_rate = 4.2
 	moss590.recoil_mitigation = 0.0
 	moss590.ads_time = 0.33
+	moss590.hand_space = 2
 	moss590.carry_class = WeaponResource.CarryClass.LARGE
-	moss590.inventory_width = 5
-	moss590.inventory_height = 2
+	moss590.inventory_width = 6
+	moss590.inventory_height = 3
 	out_weapons.append(moss590)

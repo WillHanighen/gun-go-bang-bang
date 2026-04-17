@@ -1,11 +1,12 @@
 # (codename) Gun Go Bang Bang
+
 ## ive not decided on a name yet
 
 A **Godot 4.6** first-person shooting sandbox with a playful, slightly ridiculous vibe: procedural outdoor range, multiple firearms, ammo types, and simple ballistics (including penetration). Built for experimenting with weapon feel, not as a serious milsim or a shipped game.
 
 ## Tone and direction
 
-This project should feel like a mix of:
+This project should feel like a mix of:\
 
 - **TABG-style goofiness**: toy-box energy, weird charm, and a willingness to be a little stupid on purpose
 - **STRAFTAT-style tech**: fast, sharp, mechanical, and clean in the ways the sandbox actually feels to play
@@ -33,19 +34,21 @@ The entry scene is `res://scenes/range/shooting_range.tscn`.
 
 ## Controls
 
-| Action | Default binding |
-|--------|-----------------|
-| Move | WASD |
-| Jump | Space |
-| Sprint | Shift |
-| Fire | Left mouse |
-| Aim (ADS) | Right mouse |
-| Reload | R (hold briefly to open ammo selection when multiple calibers exist) |
-| Next / previous weapon | E / Q |
-| Cycle fire mode | V |
-| Cycle ammo / ammo wheel | X (mouse moves selection when wheel is open) |
-| Interact | F |
-| Release / capture mouse | Esc |
+
+| Action                  | Default binding                                                      |
+| ----------------------- | -------------------------------------------------------------------- |
+| Move                    | WASD                                                                 |
+| Jump                    | Space                                                                |
+| Sprint                  | Shift                                                                |
+| Fire                    | Left mouse                                                           |
+| Aim (ADS)               | Right mouse                                                          |
+| Reload                  | R (hold briefly to open ammo selection when multiple calibers exist) |
+| Next / previous weapon  | E / Q                                                                |
+| Cycle fire mode         | V                                                                    |
+| Cycle ammo / ammo wheel | X (mouse moves selection when wheel is open)                         |
+| Interact                | F                                                                    |
+| Release / capture mouse | Esc                                                                  |
+
 
 ## What’s in the range
 
@@ -53,15 +56,17 @@ The main scene builds a **shooting range** at runtime: ground, sky, lighting, di
 
 ## Project layout (high level)
 
-| Path | Role |
-|------|------|
-| `scenes/range/` | Main range scene and setup |
-| `scenes/player/` | Player body, camera, weapon manager |
-| `scripts/autoload/` | `InputSetup` (default keymap), `WeaponDatabase` (calibers + weapons) |
-| `scripts/data/` | Caliber and weapon definitions |
-| `scripts/resources/` | `WeaponResource`, caliber resources |
-| `assets/` | 3D models and textures for firearms |
+
+| Path                 | Role                                                                 |
+| -------------------- | -------------------------------------------------------------------- |
+| `scenes/range/`      | Main range scene and setup                                           |
+| `scenes/player/`     | Player body, camera, weapon manager                                  |
+| `scripts/autoload/`  | `InputSetup` (default keymap), `WeaponDatabase` (calibers + weapons) |
+| `scripts/data/`      | Caliber and weapon definitions                                       |
+| `scripts/resources/` | `WeaponResource`, caliber resources                                  |
+| `assets/`            | 3D models and textures for firearms                                  |
+
 
 ## Third-party assets
 
-Model credits and licenses (CC BY 4.0 where noted) are listed in [`attributions.md`](attributions.md).
+Model credits and licenses (CC BY 4.0 where noted) are listed in `[attributions.md](attributions.md)`.

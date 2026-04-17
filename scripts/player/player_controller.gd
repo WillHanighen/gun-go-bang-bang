@@ -78,12 +78,15 @@ func _process(delta: float) -> void:
 	is_aiming = (
 		not inventory_open
 		and Input.is_action_pressed("aim")
+		and weapon_manager
+		and weapon_manager.can_aim()
 		and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED
 	)
 
 	var ads_time := 0.25
-	if weapon_manager and weapon_manager.current_weapon_data:
-		ads_time = weapon_manager.current_weapon_data.ads_time
+	var ads_weapon: WeaponResource = weapon_manager.get_ads_weapon() if weapon_manager else null
+	if ads_weapon:
+		ads_time = ads_weapon.ads_time
 	var ads_speed := (1.0 / ads_time) if ads_time > 0.0 else 20.0
 
 	if is_aiming:
@@ -324,8 +327,9 @@ func apply_recoil(vertical_deg: float, horizontal_deg: float) -> void:
 
 func _recover_recoil(delta: float) -> void:
 	var rate := 4.0
-	if weapon_manager and weapon_manager.current_weapon_data:
-		rate = weapon_manager.current_weapon_data.recoil_recovery_rate
+	var ads_weapon: WeaponResource = weapon_manager.get_ads_weapon() if weapon_manager else null
+	if ads_weapon:
+		rate = ads_weapon.recoil_recovery_rate
 
 	var decay := 1.0 - exp(-rate * 0.15 * delta)
 

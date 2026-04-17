@@ -68,7 +68,7 @@ func _draw() -> void:
 	draw_string(
 		font,
 		Vector2(EDGE_MARGIN, size.y - EDGE_MARGIN),
-		"Tab: close inventory   Shift-click: quick move   Drag items between slots and backpack   R: rotate dragged item   1/2/3: select slots   Q/E: cycle equipped weapons",
+		"Tab: close inventory   Shift-click: quick move   Drag items inside loadout slots or backpack   R: rotate dragged item   1/2/3: select loadouts   Q/E: cycle loadouts",
 		HORIZONTAL_ALIGNMENT_LEFT,
 		size.x - EDGE_MARGIN * 2.0,
 		footer_font_size,
@@ -185,6 +185,17 @@ func _draw_container(slot_name: StringName, layout: Dictionary, metrics: Diction
 		Color(0.62, 0.68, 0.76, 0.95),
 		2
 	)
+	var loadout_summary := _get_slot_loadout_summary(slot_name)
+	if not loadout_summary.is_empty():
+		draw_string(
+			font,
+			grid_origin + Vector2(0.0, -4.0 * float(metrics.get("scale", 1.0))),
+			loadout_summary,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			frame_rect.size.x - 10.0,
+			maxi(subtitle_font_size - 1, 9),
+			Color(0.9, 0.83, 0.55, 0.95)
+		)
 
 	for y in range(grid_size.y):
 		for x in range(grid_size.x):
@@ -233,6 +244,25 @@ func _draw_item(entry: Dictionary, layouts: Dictionary, metrics: Dictionary, alp
 	var footprint_font_size := maxi(int(round(11.0 * float(metrics.get("scale", 1.0)))), 9)
 	draw_string(font, item_rect.position + Vector2(7, item_rect.size.y - 8.0 * float(metrics.get("scale", 1.0))), footprint,
 		HORIZONTAL_ALIGNMENT_LEFT, item_rect.size.x - 10, footprint_font_size, Color(0.12, 0.14, 0.16, 0.95 * alpha))
+	var badge := _get_item_badge(entry)
+	if not badge.is_empty():
+		var badge_font_size := maxi(int(round(10.0 * float(metrics.get("scale", 1.0)))), 8)
+		var badge_width := font.get_string_size(badge, HORIZONTAL_ALIGNMENT_LEFT, -1, badge_font_size).x + 14.0
+		var badge_rect := Rect2(
+			Vector2(item_rect.end.x - badge_width - 6.0, item_rect.position.y + 6.0),
+			Vector2(badge_width, 16.0 + 2.0 * float(metrics.get("scale", 1.0)))
+		)
+		draw_rect(badge_rect, Color(0.1, 0.12, 0.16, 0.88 * alpha), true)
+		draw_rect(badge_rect, Color(0.95, 0.85, 0.45, 0.95 * alpha), false, 1.0)
+		draw_string(
+			font,
+			Vector2(badge_rect.position.x + 7.0, badge_rect.position.y + badge_rect.size.y - 4.0),
+			badge,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			badge_rect.size.x - 6.0,
+			badge_font_size,
+			Color(0.98, 0.95, 0.78, alpha)
+		)
 
 
 func _draw_dragged_item(entry: Dictionary, metrics: Dictionary) -> void:
@@ -315,17 +345,23 @@ func _find_drop_target(point: Vector2, item_id: int, metrics: Dictionary) -> Dic
 	var layouts := _build_layouts(metrics)
 	for slot_name in inventory.get_slot_order():
 		var layout := layouts[slot_name] as Dictionary
-		var frame_rect: Rect2 = layout.get("frame_rect", Rect2())
-		if frame_rect.has_point(point) and weapon.fits_equipment_slot(slot_name):
-			if inventory.can_place_item(item_id, slot_name, Vector2i.ZERO, false, true):
-				return {"container": slot_name, "position": Vector2i.ZERO}
+		var grid_origin: Vector2 = layout.get("grid_origin", Vector2.ZERO)
+		var grid_size: Vector2i = layout.get("grid_size", Vector2i.ZERO)
+		var grid_rect := Rect2(grid_origin, _get_item_pixel_size(grid_size, metrics))
+		if grid_rect.has_point(point) and weapon.fits_equipment_slot(slot_name):
+			var local := point - grid_origin
+			var cell_stride := float(metrics.get("cell_size", CELL_SIZE) + metrics.get("cell_gap", CELL_GAP))
+			var hover_cell := Vector2i(floori(local.x / cell_stride), floori(local.y / cell_stride))
+			var grid_position := hover_cell - _drag_grab_cell
+			if inventory.can_place_item(item_id, slot_name, grid_position, false, true):
+				return {"container": slot_name, "position": grid_position}
 			if (
 				hovered_item_id != -1
 				and hovered_item_id != item_id
 				and hovered_container == slot_name
-				and inventory.can_swap_items(item_id, hovered_item_id, slot_name, Vector2i.ZERO, false, true)
+				and inventory.can_swap_items(item_id, hovered_item_id, slot_name, grid_position, false, true)
 			):
-				return {"container": slot_name, "position": Vector2i.ZERO, "swap_item_id": hovered_item_id}
+				return {"container": slot_name, "position": grid_position, "swap_item_id": hovered_item_id}
 			return {}
 
 	var backpack_layout := layouts[PlayerInventory.SLOT_BACKPACK] as Dictionary
@@ -608,6 +644,42 @@ func _get_item_color(weapon: WeaponResource) -> Color:
 			return Color(0.7, 0.3, 0.28, 0.95)
 		_:
 			return Color(0.5, 0.5, 0.56, 0.95)
+
+
+func _get_slot_loadout_summary(slot_name: StringName) -> String:
+	if not inventory or not inventory.is_equipment_slot(slot_name):
+		return ""
+	var loadout := inventory.get_loadout_for_slot(slot_name)
+	var hand_1 := loadout.get("hand_1", {}) as Dictionary
+	var hand_2 := loadout.get("hand_2", {}) as Dictionary
+	if hand_1.is_empty() and hand_2.is_empty():
+		return "free hand space"
+	if bool(loadout.get("two_handed", false)):
+		return "occupies both hands"
+	if not hand_1.is_empty() and not hand_2.is_empty():
+		return "two one-hand items ready"
+	if not hand_1.is_empty() and bool(hand_1.get("has_support_hand", false)):
+		return "free support hand available"
+	return "one active hand item"
+
+
+func _get_item_badge(entry: Dictionary) -> String:
+	if not inventory:
+		return ""
+	var container := StringName(entry.get("container", PlayerInventory.SLOT_BACKPACK))
+	if not inventory.is_equipment_slot(container):
+		return ""
+	var loadout := inventory.get_loadout_for_slot(container)
+	var item_id := int(entry.get("id", -1))
+	var hand_1 := loadout.get("hand_1", {}) as Dictionary
+	var hand_2 := loadout.get("hand_2", {}) as Dictionary
+	if bool(loadout.get("two_handed", false)) and int(hand_1.get("id", -1)) == item_id:
+		return "2H"
+	if int(hand_1.get("id", -1)) == item_id:
+		return "H1+S" if bool(hand_1.get("has_support_hand", false)) else "H1"
+	if int(hand_2.get("id", -1)) == item_id:
+		return "H2"
+	return ""
 
 
 func _clear_drag() -> void:

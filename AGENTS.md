@@ -41,6 +41,8 @@ Avoid:
 
 Use `learnings/*.md` as project-specific memory for things the agent should remember next time.
 
+Use `learnings/local/*.md` for machine-specific or user-specific local notes that should stay on this computer and should not be committed.
+
 These files should be used to document:
 
 - specific details about how systems are supposed to work
@@ -50,7 +52,9 @@ These files should be used to document:
 
 When the user points out a mistake, clarifies intended behavior, or gives a durable project rule, the agent should prefer adding or updating a focused file in `learnings/` so the codebase becomes easier to work in over time.
 
-When making changes, check the learnings folder for potentially relevant information.
+Local environment details like tool install paths, machine quirks, or personal workflow notes belong in `learnings/local/` instead of the shared `learnings/` docs.
+
+When making changes, check the learnings folder for potentially relevant information, including `learnings/local/` when local setup details might matter.
 
 ## Rule of thumb
 
