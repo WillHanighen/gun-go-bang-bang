@@ -35,20 +35,20 @@ The entry scene is `res://scenes/range/shooting_range.tscn`.
 ## Controls
 
 
-| Action                         | Default binding                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------- |
-| Move                           | WASD                                                                            |
-| Jump                           | Space                                                                           |
-| Crouch                         | Ctrl                                                                            |
-| Sprint                         | Shift                                                                           |
-| Fire                           | Left mouse                                                                      |
+| Action                         | Default binding                                                                   |
+| ------------------------------ | --------------------------------------------------------------------------------- |
+| Move                           | WASD                                                                              |
+| Jump                           | Space                                                                             |
+| Crouch                         | Ctrl                                                                              |
+| Sprint                         | Shift                                                                             |
+| Fire                           | Left mouse                                                                        |
 | Aim (ADS)                      | Right mouse when only one hand has a gun; with two guns, right mouse fires hand 2 |
 | Reload / caliber wheel         | R (hold briefly to open caliber selection when multiple calibers exist; mouse moves when open; hold **Alt** when pressing R for off-hand) |
-| Equip loadout slot             | 1 / 2 / 3 (primary / secondary / melee)                                         |
-| Cycle fire mode                | V (hold **Alt** for off-hand when dual-wielding)                                |
-| Inventory                      | Tab                                                                             |
-| Interact                       | F                                                                               |
-| Release / capture mouse        | Esc                                                                             |
+| Equip loadout slot             | 1 / 2 / 3 (primary / secondary / melee)                                           |
+| Cycle fire mode                | V (hold **Alt** for off-hand when dual-wielding)                                  |
+| Inventory                      | Tab                                                                               |
+| Interact                       | F                                                                                 |
+| Release / capture mouse        | Esc                                                                               |
 
 
 ## What’s in the range
@@ -63,10 +63,10 @@ The main scene builds a **shooting range** at runtime: ground, sky, lighting, di
 | `scenes/range/`      | Main range scene; pickups and authored props                         |
 | `scenes/player/`     | Player body (pill silhouette), camera, weapon view, inventory        |
 | `scenes/pickups/`    | Weapon pickup scenes                                                 |
-| `scripts/autoload/` | `InputSetup` (default keymap), `WeaponDatabase` (calibers + weapons)   |
+| `scripts/autoload/`  | `InputSetup` (default keymap), `WeaponDatabase` (calibers + weapons) |
 | `scripts/combat/`    | Ballistics                                                           |
 | `scripts/data/`      | Caliber and weapon registration (`ammo_*`, `weapons_*`)              |
-| `scripts/player/`   | Movement, `WeaponManager`, inventory, spread, shots, decals            |
+| `scripts/player/`    | Movement, `WeaponManager`, inventory, spread, shots, decals          |
 | `scripts/range/`     | Environment and target builders, range logic                         |
 | `scripts/ui/`        | HUD and inventory UI                                                 |
 | `scripts/pickups/`   | Pickup behavior                                                      |
@@ -81,8 +81,6 @@ Godot writes platform builds under `export/` (contents are gitignored; only `.gi
 - **Linux** → `export/linux/` (example binary name: `GGBB.x86_64`)
 - **Windows Desktop** → `export/windows/`
 - **macOS** (universal) → `export/mac/`
-
-An `export/web/` folder exists for future or manual Web exports; there is no web preset in the repo yet.
 
 ## Platforms (in order of priority)
 
