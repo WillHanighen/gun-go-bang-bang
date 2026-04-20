@@ -13,7 +13,7 @@ func _ready() -> void:
 	RangeTargetBuilderScript.build(self)
 	_spawn_player()
 	_create_hud()
-
+	
 
 # -- player + equip ------------------------------------------------------------
 

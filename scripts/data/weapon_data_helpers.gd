@@ -31,3 +31,4 @@ static func make_caliber(
 	c.flesh_damage_mult = flesh
 	c.incendiary_damage = incen
 	return c
+	

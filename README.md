@@ -41,7 +41,7 @@ The entry scene is `res://scenes/range/shooting_range.tscn`.
 | Jump                    | Space                                                                |
 | Sprint                  | Shift                                                                |
 | Fire                    | Left mouse                                                           |
-| Aim (ADS)               | Right mouse                                                          |
+| Aim (ADS)               | Right mouse (same button fires hand 2 when dual-wielding)            |
 | Reload                  | R (hold briefly to open ammo selection when multiple calibers exist) |
 | Next / previous weapon  | E / Q                                                                |
 | Cycle fire mode         | V                                                                    |
@@ -66,6 +66,15 @@ The main scene builds a **shooting range** at runtime: ground, sky, lighting, di
 | `scripts/resources/` | `WeaponResource`, caliber resources                                  |
 | `assets/`            | 3D models and textures for firearms                                  |
 
+## Builds
+
+Builds are exported to the `export/` directory.
+
+## Platforms (in order of priority)
+
+- Linux
+- Windows
+- macOS (apple silicon)
 
 ## Third-party assets
 

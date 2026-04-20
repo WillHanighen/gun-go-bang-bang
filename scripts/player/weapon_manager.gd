@@ -138,7 +138,9 @@ func get_ads_weapon() -> WeaponResource:
 func can_aim() -> bool:
 	if not get_hand_weapon(HAND_1):
 		return false
-	return _get_hand_entry(HAND_2).is_empty()
+	# Block ADS only when something is actually equipped in the second hand (true dual-wield).
+	# A non-empty hand_2 loadout entry with no weapon must not disable aim.
+	return get_hand_weapon(HAND_2) == null
 
 
 func get_ammo_wheel_hand() -> StringName:
@@ -281,12 +283,16 @@ func _handle_input() -> void:
 		_try_cancel_shotgun_reload_for_fire(HAND_1)
 		_try_fire(HAND_1)
 
-	if Input.is_action_just_pressed("fire_hand_2"):
-		_try_cancel_shotgun_reload_for_fire(HAND_2)
-		_try_fire(HAND_2)
-	elif Input.is_action_pressed("fire_hand_2") and get_hand_fire_mode(HAND_2) == WeaponResource.FireMode.AUTO:
-		_try_cancel_shotgun_reload_for_fire(HAND_2)
-		_try_fire(HAND_2)
+	if get_hand_weapon(HAND_2):
+		if Input.is_action_just_pressed("aim"):
+			_try_cancel_shotgun_reload_for_fire(HAND_2)
+			_try_fire(HAND_2)
+		elif (
+			Input.is_action_pressed("aim")
+			and get_hand_fire_mode(HAND_2) == WeaponResource.FireMode.AUTO
+		):
+			_try_cancel_shotgun_reload_for_fire(HAND_2)
+			_try_fire(HAND_2)
 
 
 func _try_fire(hand: StringName) -> void:

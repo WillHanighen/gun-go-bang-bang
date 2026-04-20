@@ -1,5 +1,18 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Agentic learnings
 learnings/local/*
 !learnings/local/.gitkeep
+
+# Builds
+export/linux/*
+export/web/*
+export/windows/*
+export/mac/*
+
+!export/linux/.gitkeep
+!export/web/.gitkeep
+!export/windows/.gitkeep
+!export/mac/.gitkeep

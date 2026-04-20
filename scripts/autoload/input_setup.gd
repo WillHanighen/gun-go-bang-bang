@@ -21,8 +21,8 @@ func _ready() -> void:
 	_add_key("toggleInventory", KEY_TAB)
 	
 	_set_mouse("fire", MOUSE_BUTTON_LEFT)
-	_set_mouse("fire_hand_2", MOUSE_BUTTON_RIGHT)
-	_set_mouse("aim", MOUSE_BUTTON_MIDDLE)
+	# Right mouse: ADS when one gun; hand-2 fire when dual-wielding (see weapon_manager).
+	_set_mouse("aim", MOUSE_BUTTON_RIGHT)
 
 
 func _add_key(action: String, keycode: Key) -> void:
