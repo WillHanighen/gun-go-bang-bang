@@ -6,7 +6,7 @@ A **Godot 4.6** first-person shooting sandbox with a playful, slightly ridiculou
 
 ## Tone and direction
 
-This project should feel like a mix of:\
+This project should feel like a mix of:
 
 - **TABG-style goofiness**: toy-box energy, weird charm, and a willingness to be a little stupid on purpose
 - **STRAFTAT-style tech**: fast, sharp, mechanical, and clean in the ways the sandbox actually feels to play
@@ -35,46 +35,62 @@ The entry scene is `res://scenes/range/shooting_range.tscn`.
 ## Controls
 
 
-| Action                  | Default binding                                                      |
-| ----------------------- | -------------------------------------------------------------------- |
-| Move                    | WASD                                                                 |
-| Jump                    | Space                                                                |
-| Sprint                  | Shift                                                                |
-| Fire                    | Left mouse                                                           |
-| Aim (ADS)               | Right mouse (same button fires hand 2 when dual-wielding)            |
-| Reload                  | R (hold briefly to open ammo selection when multiple calibers exist) |
-| Next / previous weapon  | E / Q                                                                |
-| Cycle fire mode         | V                                                                    |
-| Cycle ammo / ammo wheel | X (mouse moves selection when wheel is open)                         |
-| Interact                | F                                                                    |
-| Release / capture mouse | Esc                                                                  |
+| Action                         | Default binding                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| Move                           | WASD                                                                            |
+| Jump                           | Space                                                                           |
+| Crouch                         | Ctrl                                                                            |
+| Sprint                         | Shift                                                                           |
+| Fire                           | Left mouse                                                                      |
+| Aim (ADS)                      | Right mouse when only one hand has a gun; with two guns, right mouse fires hand 2 |
+| Reload                         | R (hold briefly to open ammo selection when multiple calibers exist)              |
+| Next / previous equipped weapon| E / Q (cycles primary / secondary / melee loadout slots)                        |
+| Equip loadout slot             | 1 / 2 / 3 (primary / secondary / melee)                                         |
+| Cycle fire mode                | V (hold **Alt** for off-hand when dual-wielding)                                |
+| Cycle ammo / ammo wheel        | X (hold **Alt** for off-hand; mouse moves selection when the wheel is open)       |
+| Inventory                      | Tab                                                                             |
+| Interact                       | F                                                                               |
+| Release / capture mouse        | Esc                                                                             |
 
 
 ## What’s in the range
 
-The main scene builds a **shooting range** at runtime: ground, sky, lighting, distance labels (meters and yards), steel plates and paper targets at **10 / 25 / 50 / 100 m**, and **wood** and **thin metal** panels in front of extra plates to try penetration. The player spawns with the full weapon list from the autoload database.
+The main scene builds a **shooting range** at runtime: ground, sky, lighting, distance labels (meters and yards), steel plates and paper targets at **10 / 25 / 50 / 100 m**, and **wood** and **thin metal** panels in front of extra plates to try penetration. The **player starts unarmed**; every firearm in the project is available as a **world pickup** (Colt Python, M1911, KRISS Vector, Remington 870, M4A1, Mossberg 590) placed on the range. Weapons live in a **grid inventory** (`WeaponDatabase` autoload supplies definitions; `PlayerInventory` tracks items and equipped slots).
 
 ## Project layout (high level)
 
 
 | Path                 | Role                                                                 |
 | -------------------- | -------------------------------------------------------------------- |
-| `scenes/range/`      | Main range scene and setup                                           |
-| `scenes/player/`     | Player body, camera, weapon manager                                  |
-| `scripts/autoload/`  | `InputSetup` (default keymap), `WeaponDatabase` (calibers + weapons) |
-| `scripts/data/`      | Caliber and weapon definitions                                       |
-| `scripts/resources/` | `WeaponResource`, caliber resources                                  |
+| `scenes/range/`      | Main range scene; pickups and authored props                         |
+| `scenes/player/`     | Player body (pill silhouette), camera, weapon view, inventory        |
+| `scenes/pickups/`    | Weapon pickup scenes                                                 |
+| `scripts/autoload/` | `InputSetup` (default keymap), `WeaponDatabase` (calibers + weapons)   |
+| `scripts/combat/`    | Ballistics                                                           |
+| `scripts/data/`      | Caliber and weapon registration (`ammo_*`, `weapons_*`)              |
+| `scripts/player/`   | Movement, `WeaponManager`, inventory, spread, shots, decals            |
+| `scripts/range/`     | Environment and target builders, range logic                         |
+| `scripts/ui/`        | HUD and inventory UI                                                 |
+| `scripts/pickups/`   | Pickup behavior                                                      |
+| `scripts/resources/` | `WeaponResource`, `CaliberResource`                                  |
 | `assets/`            | 3D models and textures for firearms                                  |
+| `export_presets.cfg` | Export presets (Linux, Windows, macOS)                               |
 
 ## Builds
 
-Builds are exported to the `export/` directory.
+Godot writes platform builds under `export/` (contents are gitignored; only `.gitkeep` files are tracked). Presets are defined in `export_presets.cfg`:
+
+- **Linux** → `export/linux/` (example binary name: `GGBB.x86_64`)
+- **Windows Desktop** → `export/windows/`
+- **macOS** (universal) → `export/mac/`
+
+An `export/web/` folder exists for future or manual Web exports; there is no web preset in the repo yet.
 
 ## Platforms (in order of priority)
 
 - Linux
 - Windows
-- macOS (apple silicon)
+- macOS)
 
 ## Third-party assets
 
