@@ -90,7 +90,7 @@ An `export/web/` folder exists for future or manual Web exports; there is no web
 
 - Linux
 - Windows
-- macOS)
+- macOS
 
 ## Third-party assets
 
