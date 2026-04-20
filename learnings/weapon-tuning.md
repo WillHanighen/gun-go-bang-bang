@@ -19,4 +19,4 @@
 - Large or otherwise two-hand weapons should reserve the whole active loadout and not share a slot with another equipped item.
 - A single one-handed pistol with no second-hand item should get a support bonus rather than pretending there is a second gun.
 - Dual-wield: **left mouse** fires hand 1; **right mouse** fires hand 2 when a second weapon is equipped. **Right mouse** is ADS only when the second hand has no gun (single-gun or empty off-hand).
-- Hold **Alt** so the off-hand is targeted for fire mode (`V`), ammo cycle / ammo wheel (`X`), and reload / hold-to-open caliber wheel (`R` picks the wheel hand at press time, so use Alt there for hand 2).
+- Hold **Alt** so the off-hand is targeted for fire mode (`V`) and reload / hold-to-open caliber wheel (`R` picks the wheel hand at press time, so use Alt there for hand 2).

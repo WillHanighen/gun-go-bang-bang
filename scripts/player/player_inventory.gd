@@ -325,29 +325,6 @@ func set_active_slot(slot_name: StringName) -> void:
 	inventory_changed.emit()
 
 
-func cycle_active_slot(step: int) -> void:
-	var occupied_slots: Array[StringName] = []
-	for slot in SLOT_ORDER:
-		if _has_items_in_container(slot):
-			occupied_slots.append(slot)
-
-	if occupied_slots.is_empty():
-		if get_active_weapon() != null:
-			var previous_weapon := get_active_weapon()
-			active_slot = SLOT_PRIMARY
-			_emit_active_selection_changed(previous_weapon)
-			inventory_changed.emit()
-		return
-
-	var current_index := occupied_slots.find(active_slot)
-	if current_index == -1:
-		set_active_slot(occupied_slots[0])
-		return
-
-	var next_index := posmod(current_index + step, occupied_slots.size())
-	set_active_slot(occupied_slots[next_index])
-
-
 func _find_auto_placement(weapon: WeaponResource) -> Dictionary:
 	var equipment_placement := _find_quick_equip_placement(weapon)
 	if not equipment_placement.is_empty():

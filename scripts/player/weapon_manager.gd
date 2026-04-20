@@ -217,20 +217,6 @@ func cycle_fire_mode(hand: StringName = HAND_1) -> void:
 	_emit_loadout_changed()
 
 
-func cycle_ammo(hand: StringName = HAND_1) -> void:
-	var state := _get_hand_state(hand)
-	var weapon := state.get("weapon") as WeaponResource
-	if not weapon or weapon.calibers.size() <= 1:
-		return
-	state["caliber_index"] = (int(state.get("caliber_index", 0)) + 1) % weapon.calibers.size()
-	_store_hand_state(hand, state)
-	if hand == HAND_1:
-		ammo_wheel_index = int(state.get("caliber_index", 0))
-		caliber_changed.emit(get_current_caliber())
-	_emit_loadout_changed()
-	_start_caliber_swap_reload(hand)
-
-
 func start_reload(hand: StringName = HAND_1) -> void:
 	var state := _get_hand_state(hand)
 	var weapon := state.get("weapon") as WeaponResource
@@ -256,10 +242,6 @@ func _handle_input() -> void:
 		return
 
 	if inventory:
-		if Input.is_action_just_pressed("next_weapon"):
-			inventory.cycle_active_slot(1)
-		if Input.is_action_just_pressed("prev_weapon"):
-			inventory.cycle_active_slot(-1)
 		if Input.is_action_just_pressed("equip_slot_1"):
 			equip_weapon(0)
 		if Input.is_action_just_pressed("equip_slot_2"):
@@ -269,9 +251,6 @@ func _handle_input() -> void:
 
 	if Input.is_action_just_pressed("switch_fire_mode"):
 		cycle_fire_mode(_get_modified_hand())
-
-	if Input.is_action_just_pressed("switch_ammo"):
-		cycle_ammo(_get_modified_hand())
 
 	if ammo_wheel_open:
 		return

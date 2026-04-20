@@ -11,12 +11,9 @@ func _ready() -> void:
 	_add_key("sprint", KEY_SHIFT)
 	_add_key("reload", KEY_R)
 	_add_key("switch_fire_mode", KEY_V)
-	_add_key("next_weapon", KEY_E)
-	_add_key("prev_weapon", KEY_Q)
 	_add_key("equip_slot_1", KEY_1)
 	_add_key("equip_slot_2", KEY_2)
 	_add_key("equip_slot_3", KEY_3)
-	_add_key("switch_ammo", KEY_X)
 	_add_key("interact", KEY_F)
 	_add_key("toggleInventory", KEY_TAB)
 	

@@ -10,7 +10,6 @@ The inventory/equipment flow has several behavior details that were refined afte
 - Picking up or moving a weapon into an equipped slot should select the correct weapon when appropriate.
 - Unequipping a weapon should not leave it active in the player's hands.
 - `1`, `2`, and `3` should select the specific equipped slots in order: primary, secondary, melee.
-- `Q` and `E` cycle through occupied equipped weapons.
 
 ## Quick move behavior
 

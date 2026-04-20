@@ -43,11 +43,9 @@ The entry scene is `res://scenes/range/shooting_range.tscn`.
 | Sprint                         | Shift                                                                           |
 | Fire                           | Left mouse                                                                      |
 | Aim (ADS)                      | Right mouse when only one hand has a gun; with two guns, right mouse fires hand 2 |
-| Reload                         | R (hold briefly to open ammo selection when multiple calibers exist)              |
-| Next / previous equipped weapon| E / Q (cycles primary / secondary / melee loadout slots)                        |
+| Reload / caliber wheel         | R (hold briefly to open caliber selection when multiple calibers exist; mouse moves when open; hold **Alt** when pressing R for off-hand) |
 | Equip loadout slot             | 1 / 2 / 3 (primary / secondary / melee)                                         |
 | Cycle fire mode                | V (hold **Alt** for off-hand when dual-wielding)                                |
-| Cycle ammo / ammo wheel        | X (hold **Alt** for off-hand; mouse moves selection when the wheel is open)       |
 | Inventory                      | Tab                                                                             |
 | Interact                       | F                                                                               |
 | Release / capture mouse        | Esc                                                                             |

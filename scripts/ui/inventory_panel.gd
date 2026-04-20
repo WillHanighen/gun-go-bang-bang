@@ -68,7 +68,7 @@ func _draw() -> void:
 	draw_string(
 		font,
 		Vector2(EDGE_MARGIN, size.y - EDGE_MARGIN),
-		"Tab: close inventory   Shift-click: quick move   Drag items inside loadout slots or backpack   R: rotate dragged item   1/2/3: select loadouts   Q/E: cycle loadouts",
+		"Tab: close inventory   Shift-click: quick move   Drag items inside loadout slots or backpack   R: rotate dragged item   1/2/3: select loadouts",
 		HORIZONTAL_ALIGNMENT_LEFT,
 		size.x - EDGE_MARGIN * 2.0,
 		footer_font_size,
