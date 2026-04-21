@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://byrm5kdmg2qbj"
 path.s3tc="res://.godot/imported/mossberg_590_mariner 4k_3.png-bb1484f3ffa8b0291607a4d955971217.s3tc.ctex"
+path.etc2="res://.godot/imported/mossberg_590_mariner 4k_3.png-bb1484f3ffa8b0291607a4d955971217.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/Mossberg 590/mossberg_590_mariner 4k_3.png"
-dest_files=["res://.godot/imported/mossberg_590_mariner 4k_3.png-bb1484f3ffa8b0291607a4d955971217.s3tc.ctex"]
+dest_files=["res://.godot/imported/mossberg_590_mariner 4k_3.png-bb1484f3ffa8b0291607a4d955971217.s3tc.ctex", "res://.godot/imported/mossberg_590_mariner 4k_3.png-bb1484f3ffa8b0291607a4d955971217.etc2.ctex"]
 
 [params]
 

@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dp1r884r2h16s"
 path.s3tc="res://.godot/imported/m1911_handgun 1k_4.jpg-4a1a872cc78fec5370eccf58556baabe.s3tc.ctex"
+path.etc2="res://.godot/imported/m1911_handgun 1k_4.jpg-4a1a872cc78fec5370eccf58556baabe.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/M1911/m1911_handgun 1k_4.jpg"
-dest_files=["res://.godot/imported/m1911_handgun 1k_4.jpg-4a1a872cc78fec5370eccf58556baabe.s3tc.ctex"]
+dest_files=["res://.godot/imported/m1911_handgun 1k_4.jpg-4a1a872cc78fec5370eccf58556baabe.s3tc.ctex", "res://.godot/imported/m1911_handgun 1k_4.jpg-4a1a872cc78fec5370eccf58556baabe.etc2.ctex"]
 
 [params]
 

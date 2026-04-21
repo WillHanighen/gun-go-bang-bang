@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cipe70egy5snb"
 path.s3tc="res://.godot/imported/m4a1_rifle 2k_0.jpg-73c9a5feb89510c69a17e9fede1df69d.s3tc.ctex"
+path.etc2="res://.godot/imported/m4a1_rifle 2k_0.jpg-73c9a5feb89510c69a17e9fede1df69d.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/M4A1/m4a1_rifle 2k_0.jpg"
-dest_files=["res://.godot/imported/m4a1_rifle 2k_0.jpg-73c9a5feb89510c69a17e9fede1df69d.s3tc.ctex"]
+dest_files=["res://.godot/imported/m4a1_rifle 2k_0.jpg-73c9a5feb89510c69a17e9fede1df69d.s3tc.ctex", "res://.godot/imported/m4a1_rifle 2k_0.jpg-73c9a5feb89510c69a17e9fede1df69d.etc2.ctex"]
 
 [params]
 

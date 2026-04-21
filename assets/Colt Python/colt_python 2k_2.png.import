@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://donaxw8fxsee2"
 path.s3tc="res://.godot/imported/colt_python 2k_2.png-19ab523217afdd2246a917bd058ff90f.s3tc.ctex"
+path.etc2="res://.godot/imported/colt_python 2k_2.png-19ab523217afdd2246a917bd058ff90f.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/Colt Python/colt_python 2k_2.png"
-dest_files=["res://.godot/imported/colt_python 2k_2.png-19ab523217afdd2246a917bd058ff90f.s3tc.ctex"]
+dest_files=["res://.godot/imported/colt_python 2k_2.png-19ab523217afdd2246a917bd058ff90f.s3tc.ctex", "res://.godot/imported/colt_python 2k_2.png-19ab523217afdd2246a917bd058ff90f.etc2.ctex"]
 
 [params]
 

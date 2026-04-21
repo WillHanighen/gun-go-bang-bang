@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://co6ynaigmeiof"
 path.s3tc="res://.godot/imported/kriss_vector 4k_2.png-73016e329e528cab2d13ef37da30d5eb.s3tc.ctex"
+path.etc2="res://.godot/imported/kriss_vector 4k_2.png-73016e329e528cab2d13ef37da30d5eb.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/Kriss Vector/kriss_vector 4k_2.png"
-dest_files=["res://.godot/imported/kriss_vector 4k_2.png-73016e329e528cab2d13ef37da30d5eb.s3tc.ctex"]
+dest_files=["res://.godot/imported/kriss_vector 4k_2.png-73016e329e528cab2d13ef37da30d5eb.s3tc.ctex", "res://.godot/imported/kriss_vector 4k_2.png-73016e329e528cab2d13ef37da30d5eb.etc2.ctex"]
 
 [params]
 
