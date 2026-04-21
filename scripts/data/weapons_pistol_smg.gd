@@ -6,12 +6,14 @@ extends RefCounted
 static func register(calibers: Dictionary, out_weapons: Array[WeaponResource]) -> void:
 	var cal_45: Array[CaliberResource] = [
 		calibers["45_fmj"], calibers["45_ap"],
-		calibers["45_hp"], calibers["45_incen"],
+		calibers["45_hp"], calibers["45_rip"],
+		calibers["45_incen"],
 	]
 
 	var cal_357: Array[CaliberResource] = [
 		calibers["357_fmj"], calibers["357_hp"],
-		calibers["357_ap"], calibers["38_special"],
+		calibers["357_rip"], calibers["357_ap"],
+		calibers["38_special"],
 	]
 
 	var colt_python := WeaponResource.new()

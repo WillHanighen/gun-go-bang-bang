@@ -10,6 +10,9 @@ static func register(out_calibers: Dictionary) -> void:
 	out_calibers["357_hp"] = WeaponDataHelpers.make_caliber(
 		".357 Magnum JHP", CaliberResource.AmmoType.HP,
 		54.0, 420.0, 0.1, 28.0, 75.0, 0.08, 1, 0.0, 1.4)
+	out_calibers["357_rip"] = WeaponDataHelpers.make_caliber(
+		".357 Magnum RIP", CaliberResource.AmmoType.RIP,
+		49.0, 405.0, 0.04, 24.0, 68.0, 0.07, 1, 0.0, 1.65)
 	out_calibers["357_ap"] = WeaponDataHelpers.make_caliber(
 		".357 Magnum AP", CaliberResource.AmmoType.AP,
 		34.0, 450.0, 0.48, 32.0, 90.0, 0.1, 1, 0.0, 0.84)

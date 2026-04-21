@@ -1,7 +1,7 @@
 class_name CaliberResource
 extends Resource
 
-enum AmmoType { FMJ, AP, HP, INCENDIARY, SUBSONIC, TRACER, BUCKSHOT, SLUG }
+enum AmmoType { FMJ, AP, HP, INCENDIARY, SUBSONIC, TRACER, BUCKSHOT, SLUG, RIP }
 
 @export var caliber_name: String = ""
 @export var ammo_type: AmmoType = AmmoType.FMJ

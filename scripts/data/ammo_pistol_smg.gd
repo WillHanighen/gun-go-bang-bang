@@ -14,6 +14,9 @@ static func register(out_calibers: Dictionary) -> void:
 	out_calibers["45_hp"] = WeaponDataHelpers.make_caliber(
 		".45 ACP JHP", CaliberResource.AmmoType.HP,
 		57.0, 245.0, 0.08, 20.0, 80.0, 0.1, 1, 0.0, 1.45)
+	out_calibers["45_rip"] = WeaponDataHelpers.make_caliber(
+		".45 ACP RIP", CaliberResource.AmmoType.RIP,
+		52.0, 238.0, 0.03, 18.0, 72.0, 0.09, 1, 0.0, 1.72)
 	out_calibers["45_incen"] = WeaponDataHelpers.make_caliber(
 		".45 ACP Incendiary", CaliberResource.AmmoType.INCENDIARY,
 		40.0, 250.0, 0.25, 22.0, 90.0, 0.12, 1, 0.0, 1.0, 10.0)
@@ -28,6 +31,9 @@ static func register(out_calibers: Dictionary) -> void:
 	out_calibers["9_hp"] = WeaponDataHelpers.make_caliber(
 		"9x19mm JHP", CaliberResource.AmmoType.HP,
 		46.0, 340.0, 0.06, 25.0, 90.0, 0.08, 1, 0.0, 1.48)
+	out_calibers["9_rip"] = WeaponDataHelpers.make_caliber(
+		"9x19mm RIP", CaliberResource.AmmoType.RIP,
+		43.0, 328.0, 0.025, 22.0, 82.0, 0.07, 1, 0.0, 1.68)
 	out_calibers["9_subsonic"] = WeaponDataHelpers.make_caliber(
 		"9x19mm Subsonic", CaliberResource.AmmoType.SUBSONIC,
 		32.0, 300.0, 0.22, 20.0, 80.0, 0.12)
