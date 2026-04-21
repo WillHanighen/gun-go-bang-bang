@@ -37,6 +37,8 @@ Avoid:
 - realism that makes the game less fun
 - systems that become tedious just to feel authentic
 
+Also update docs about changes, preventing them from becoming outdated or inaccurate.
+
 ## Project memory
 
 Use `learnings/*.md` as project-specific memory for things the agent should remember next time.

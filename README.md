@@ -48,7 +48,9 @@ The entry scene is `res://scenes/range/shooting_range.tscn`.
 | Cycle fire mode                | V (hold **Alt** for off-hand when dual-wielding)                                  |
 | Inventory                      | Tab                                                                               |
 | Interact                       | F                                                                                 |
-| Release / capture mouse        | Esc                                                                               |
+| Pause menu                     | Esc                                                                               |
+
+While `SOLO_PLAYER_SESSION` is true in `scripts/ui/pause_menu.gd`, opening pause **freezes** the scene tree (`SceneTree.pause`). For future multiplayer, flip it to false so the match can keep simulating while the menu is open.
 
 
 ## What’s in the range
@@ -68,7 +70,7 @@ The main scene builds a **shooting range** at runtime: ground, sky, lighting, di
 | `scripts/data/`      | Caliber and weapon registration (`ammo_*`, `weapons_*`)              |
 | `scripts/player/`    | Movement, `WeaponManager`, inventory, spread, shots, decals          |
 | `scripts/range/`     | Environment and target builders, range logic                         |
-| `scripts/ui/`        | HUD and inventory UI                                                 |
+| `scripts/ui/`        | HUD, inventory UI, pause menu                                        |
 | `scripts/pickups/`   | Pickup behavior                                                      |
 | `scripts/resources/` | `WeaponResource`, `CaliberResource`                                  |
 | `assets/`            | 3D models and textures for firearms                                  |

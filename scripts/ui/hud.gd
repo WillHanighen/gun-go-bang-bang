@@ -196,7 +196,7 @@ func _build_ui() -> void:
 	controls_label.offset_top = 8
 	controls_label.offset_bottom = 28
 	controls_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	controls_label.text = "WASD: Move | Ctrl: Crouch | F: Interact | Tab: Inventory | LMB: Hand 1 | RMB: Aim (Hand 2 if dual) | R / Alt+R: Reload & caliber | V / Alt+V: Fire Mode | 1/2/3: Loadout | Esc: Cursor"
+	controls_label.text = "WASD: Move | Ctrl: Crouch | F: Interact | Tab: Inventory | LMB: Hand 1 | RMB: Aim (Hand 2 if dual) | R / Alt+R: Reload & caliber | V / Alt+V: Fire Mode | 1/2/3: Loadout | Esc: Pause"
 	controls_label.add_theme_font_size_override("font_size", 12)
 	controls_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 0.6))
 	add_child(controls_label)

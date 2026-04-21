@@ -136,9 +136,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event.is_action_pressed("ui_cancel"):
 		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
-			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-		else:
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+			var pause_menu: Node = get_tree().get_first_node_in_group("pause_menu")
+			if pause_menu and pause_menu.has_method("request_pause"):
+				pause_menu.call("request_pause")
+		return
 
 
 func _physics_process(delta: float) -> void:

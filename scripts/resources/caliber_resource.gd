@@ -18,7 +18,6 @@ enum AmmoType { FMJ, AP, HP, INCENDIARY, SUBSONIC, TRACER, BUCKSHOT, SLUG }
 @export var flesh_damage_mult: float = 1.0
 @export var incendiary_damage: float = 0.0
 
-
 func get_damage_at_distance(distance: float) -> float:
 	if distance <= effective_range:
 		return base_damage
