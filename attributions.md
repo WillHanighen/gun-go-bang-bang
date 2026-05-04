@@ -1,5 +1,9 @@
 # Attributions
 
+## 3D Models
+
+### Weapons
+
 - KRISS Vector model
 	- "KRISS VECTOR" (https://skfb.ly/oETX6) by carolineblueeyes is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
 - M1911 model
@@ -12,3 +16,7 @@
 	- "Colt Python" (https://skfb.ly/6ZAPP) by vitaly.kotsur is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
 - Mossberg 590 model
 	- "Mossberg 590 Mariner" (https://skfb.ly/oWZOy) by 8sianDude is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+
+## Others
+- Gnome Chompski model
+	- "PC Computer - Left 4 Dead 2 - Gnome Chompski" (https://skfb.ly/oWEXp) by Халява is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).

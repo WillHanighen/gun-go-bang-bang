@@ -1,0 +1,61 @@
+[gd_scene format=3 uid="uid://cwvfucuwh5f2o"]
+
+[ext_resource type="Script" uid="uid://biwdq0xp84bvv" path="res://scripts/ui/main_menu_showcase.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://dph2boca2phso" path="res://scenes/player/player.tscn" id="2_qo4gr"]
+[ext_resource type="PackedScene" uid="uid://ca58ocugcdr8m" path="res://assets/Gnome Chompski/Gnome Chompski.glb" id="3_1im34"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+sky_top_color = Color(0.32, 0.48, 0.74, 1)
+sky_horizon_color = Color(0.58, 0.69, 0.84, 1)
+ground_bottom_color = Color(0.16, 0.15, 0.17, 1)
+ground_horizon_color = Color(0.54, 0.63, 0.78, 1)
+
+[sub_resource type="Sky" id="Sky_preview"]
+sky_material = SubResource("SkyMat")
+
+[sub_resource type="Environment" id="Environment_preview"]
+background_mode = 2
+sky = SubResource("Sky_preview")
+ambient_light_source = 2
+ambient_light_energy = 0.52
+tonemap_mode = 3
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
+size = Vector2(24, 24)
+
+[sub_resource type="StandardMaterial3D" id="GroundMat"]
+albedo_color = Color(0.28, 0.32, 0.38, 1)
+roughness = 0.95
+
+[node name="MainMenuShowcase" type="Node3D" unique_id=559252622]
+script = ExtResource("1")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=37077009]
+environment = SubResource("Environment_preview")
+
+[node name="Ground" type="MeshInstance3D" parent="." unique_id=1548029854]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.001, -1.2)
+mesh = SubResource("PlaneMesh_ground")
+surface_material_override/0 = SubResource("GroundMat")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=865900893]
+transform = Transform3D(0.8660253, 0.17101005, -0.46984628, 0, 0.9396926, 0.34202006, 0.5, -0.29619813, 0.8137977, -1.2, 2.8, 1.85)
+light_energy = 1.1
+shadow_enabled = true
+
+[node name="RimFill" type="OmniLight3D" parent="." unique_id=499394766]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.1, 1.95, -0.4)
+light_color = Color(0.65, 0.78, 1, 1)
+light_energy = 0.35
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1034124218]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.057785273, 1.52, 2.42)
+current = true
+fov = 54.5
+
+[node name="Player" parent="." unique_id=1155665388 instance=ExtResource("2_qo4gr")]
+transform = Transform3D(-0.7435769, 0, 0.66865057, 0, 1, 0, -0.66865057, 0, -0.7435769, 1.040754, 0.94759476, -0.9312074)
+script = null
+
+[node name="Sketchfab_Scene" parent="." unique_id=1788977695 instance=ExtResource("3_1im34")]
+transform = Transform3D(0.009691621, 0, -0.0024642397, 0, 0.01, 0, 0.0024642397, 0, 0.009691621, 1.5726056, 0, -1.4304775)

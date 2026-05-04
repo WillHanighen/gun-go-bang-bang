@@ -4,7 +4,6 @@ extends RefCounted
 
 static func build(parent: Node3D) -> void:
 	_create_environment(parent)
-	_create_ground(parent)
 	_create_distance_markers(parent)
 
 
@@ -33,42 +32,6 @@ static func _create_environment(parent: Node3D) -> void:
 	sun.light_energy = 1.2
 	sun.shadow_enabled = true
 	parent.add_child(sun)
-
-
-static func _create_ground(parent: Node3D) -> void:
-	var ground := StaticBody3D.new()
-	ground.name = "Ground"
-
-	var mesh_inst := MeshInstance3D.new()
-	var plane_mesh := PlaneMesh.new()
-	plane_mesh.size = Vector2(100, 250)
-	mesh_inst.mesh = plane_mesh
-	mesh_inst.position.z = -25.0
-
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.35, 0.4, 0.3)
-	mesh_inst.set_surface_override_material(0, mat)
-
-	var collision := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = Vector3(100, 0.1, 250)
-	collision.shape = box
-	collision.position = Vector3(0, -0.05, -25.0)
-
-	ground.add_child(mesh_inst)
-	ground.add_child(collision)
-	parent.add_child(ground)
-
-	var line_mat := StandardMaterial3D.new()
-	line_mat.albedo_color = Color(0.9, 0.9, 0.9)
-	for i in range(-2, 3):
-		var line := MeshInstance3D.new()
-		var line_mesh := BoxMesh.new()
-		line_mesh.size = Vector3(0.05, 0.005, 150)
-		line.mesh = line_mesh
-		line.position = Vector3(i * 3.0, 0.005, -50.0)
-		line.set_surface_override_material(0, line_mat)
-		parent.add_child(line)
 
 
 static func _create_distance_markers(parent: Node3D) -> void:

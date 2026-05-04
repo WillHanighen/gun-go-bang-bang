@@ -30,7 +30,7 @@ Clone the repo and open the project folder in the Godot editor, or run the main 
 godot --path /path/to/gun-go-bang-bang
 ```
 
-The entry scene is `res://scenes/range/shooting_range.tscn`.
+The entry scene is `res://scenes/ui/main_menu.tscn`; from there you reach the playable **shooting range** at `res://scenes/range/shooting_range.tscn`.
 
 ## Controls
 
@@ -55,14 +55,15 @@ While `SOLO_PLAYER_SESSION` is true in `scripts/ui/pause_menu.gd`, opening pause
 
 ## What’s in the range
 
-The main scene builds a **shooting range** at runtime: ground, sky, lighting, distance labels (meters and yards), steel plates and paper targets at **10 / 25 / 50 / 100 m**, and **wood** and **thin metal** panels in front of extra plates to try penetration. The **player starts unarmed**; every firearm in the project is available as a **world pickup** (Colt Python, M1911, KRISS Vector, Remington 870, M4A1, Mossberg 590) placed on the range. Weapons live in a **grid inventory** (`WeaponDatabase` autoload supplies definitions; `PlayerInventory` tracks items and equipped slots).
+When you reach the playable **shooting range** from **Play → Shooting range**, the scene file includes the **floor** (ground mesh, collision, and lane markings); **sky, lighting, and distance labels** are still created at runtime along with **steel plates and paper targets** at **10 / 25 / 50 / 100 m**, and **wood** and **thin metal** panels in front of extra plates to try penetration. The **player starts unarmed**; every firearm in the project is available as a **world pickup** (Colt Python, M1911, KRISS Vector, Remington 870, M4A1, Mossberg 590) placed on the range. Weapons live in a **grid inventory** (`WeaponDatabase` autoload supplies definitions; `PlayerInventory` tracks items and equipped slots).
 
 ## Project layout (high level)
 
 
 | Path                 | Role                                                                 |
 | -------------------- | -------------------------------------------------------------------- |
-| `scenes/range/`      | Main range scene; pickups and authored props                         |
+| `scenes/range/`      | Shooting range scene; pickups and authored props                     |
+| `scenes/ui/`         | Main menu (+ 3D `main_menu_showcase` backdrop); settings panel reused by pause and menu |
 | `scenes/player/`     | Player body (pill silhouette), camera, weapon view, inventory        |
 | `scenes/pickups/`    | Weapon pickup scenes                                                 |
 | `scripts/autoload/`  | `InputSetup` (default keymap), `WeaponDatabase` (calibers + weapons) |
@@ -70,7 +71,7 @@ The main scene builds a **shooting range** at runtime: ground, sky, lighting, di
 | `scripts/data/`      | Caliber and weapon registration (`ammo_*`, `weapons_*`)              |
 | `scripts/player/`    | Movement, `WeaponManager`, inventory, spread, shots, decals          |
 | `scripts/range/`     | Environment and target builders, range logic                         |
-| `scripts/ui/`        | HUD, inventory UI, pause menu                                        |
+| `scripts/ui/`        | HUD, inventory UI, pause menu, main menu, shared settings UI         |
 | `scripts/pickups/`   | Pickup behavior                                                      |
 | `scripts/resources/` | `WeaponResource`, `CaliberResource`                                  |
 | `assets/`            | 3D models and textures for firearms                                  |

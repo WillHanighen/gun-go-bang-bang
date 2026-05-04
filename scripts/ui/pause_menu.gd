@@ -7,10 +7,13 @@ const SOLO_PLAYER_SESSION := true
 ## Public issue URL for "Report a Bug". Leave empty to show a friendly placeholder dialog.
 const BUG_REPORT_URL := "https://github.com/WillHanighen/gun-go-bang-bang/issues"
 
+const SETTINGS_MENU_SCENE := preload("res://scenes/ui/settings_menu_panel.tscn")
+
 const BUTTON_MIN_WIDTH := 280.0
+const MAIN_MENU_SCENE := "res://scenes/ui/main_menu.tscn"
 
 var _main_panel: VBoxContainer
-var _settings_panel: VBoxContainer
+var _settings_panel: Control
 var _settings_visible := false
 var _quit_dialog: ConfirmationDialog
 var _bug_dialog: AcceptDialog
@@ -164,43 +167,29 @@ func _build_ui() -> void:
 	mm_block.add_theme_constant_override("separation", 4)
 	var mm_btn := Button.new()
 	mm_btn.text = "Quit to Main Menu"
-	mm_btn.disabled = true
 	mm_btn.custom_minimum_size.x = BUTTON_MIN_WIDTH
+	mm_btn.pressed.connect(_quit_to_main_menu)
 	mm_block.add_child(mm_btn)
-	var mm_note := Label.new()
-	mm_note.text = "Main menu not implemented yet."
-	mm_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	mm_note.add_theme_font_size_override("font_size", 11)
-	mm_note.add_theme_color_override("font_color", Color(0.55, 0.55, 0.62))
-	mm_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	mm_note.custom_minimum_size = Vector2(BUTTON_MIN_WIDTH, 0)
-	mm_block.add_child(mm_note)
 	_main_panel.add_child(mm_block)
 
 	_main_panel.add_child(_make_button("Quit to Desktop", _on_quit_desktop_pressed))
 
-	_settings_panel = VBoxContainer.new()
+	_settings_panel = SETTINGS_MENU_SCENE.instantiate()
 	_settings_panel.visible = false
-	_settings_panel.add_theme_constant_override("separation", 12)
+	_settings_panel.connect("back_requested", _show_main_panel)
 	root_col.add_child(_settings_panel)
 
-	var st_title := Label.new()
-	st_title.text = "Settings"
-	st_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	st_title.add_theme_font_size_override("font_size", 20)
-	_settings_panel.add_child(st_title)
 
-	var st_body := Label.new()
-	st_body.text = (
-		"Volume, mouse sensitivity, reticle color drama, etc. not implemented yet.\n"
-		+ "(or hey, do it yourself! It's FOSS after all!)"
-	)
-	st_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	st_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	st_body.custom_minimum_size = Vector2(380, 0)
-	_settings_panel.add_child(st_body)
-
-	_settings_panel.add_child(_make_button("Back", _show_main_panel))
+func _quit_to_main_menu() -> void:
+	if not visible:
+		return
+	if _froze_scene_tree:
+		get_tree().paused = false
+		_froze_scene_tree = false
+	_show_main_panel()
+	visible = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
 
 
 func _make_button(text: String, on_pressed: Callable) -> Button:

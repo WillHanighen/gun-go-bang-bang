@@ -11,12 +11,13 @@ config_version=5
 [application]
 
 config/name="gun go bang bang"
-run/main_scene="res://scenes/range/shooting_range.tscn"
+run/main_scene="res://scenes/ui/main_menu.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
+EggScreenFx="*res://scripts/autoload/egg_screen_fx.gd"
 InputSetup="*res://scripts/autoload/input_setup.gd"
 WeaponDatabase="*res://scripts/autoload/weapon_database.gd"
 

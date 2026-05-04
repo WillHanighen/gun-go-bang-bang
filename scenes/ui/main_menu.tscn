@@ -1,0 +1,162 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_menu_panel.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_menu_showcase.tscn" id="3"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1")
+
+[node name="BackgroundViewportContainer" type="SubViewportContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+mouse_filter = 2
+
+[node name="BackgroundViewport" type="SubViewport" parent="BackgroundViewportContainer"]
+handle_input_locally = false
+render_target_update_mode = 2
+audio_listener_enable_3d = false
+
+[node name="ShowcaseScene" parent="BackgroundViewportContainer/BackgroundViewport" instance=ExtResource("3")]
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.03, 0.04, 0.058, 0.58)
+
+[node name="MenuRootRow" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="MenuPad" type="MarginContainer" parent="MenuRootRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 52
+theme_override_constants/margin_top = 44
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 44
+
+[node name="MenuColumnCenter" type="CenterContainer" parent="MenuRootRow/MenuPad"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="MenuColumn" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Title" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
+layout_mode = 2
+text = "(codename) Gun Go Bang Bang"
+horizontal_alignment = 1
+theme_override_colors/font_outline_color = Color(0.12, 0.15, 0.2, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 26
+
+[node name="Tagline" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
+layout_mode = 2
+text = "A slightly ridiculous shooting sandbox · pick your nonsense level"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+custom_minimum_size = Vector2(420, 0)
+
+[node name="MainPage" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="BtnPlay" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 0)
+text = "Play"
+
+[node name="BtnSettings" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 0)
+text = "Settings"
+
+[node name="BtnQuit" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 0)
+text = "Quit to Desktop"
+
+[node name="PlayPage" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="PlayTitle" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage"]
+layout_mode = 2
+text = "Game modes"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 20
+
+[node name="PlaySubtitle" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage"]
+layout_mode = 2
+text = "More modes can land here whenever we get distracted enough."
+horizontal_alignment = 1
+autowrap_mode = 3
+custom_minimum_size = Vector2(380, 0)
+theme_override_colors/font_color = Color(0.65, 0.71, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="BtnShootingRange" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 0)
+text = "Shooting range (sandbox)"
+
+[node name="BtnMultiplayer" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 0)
+disabled = true
+text = "Multiplayer (eventually)"
+tooltip_text = "Not wired yet. Go bother a friend locally for now."
+
+[node name="BtnPlayBack" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 0)
+text = "Back"
+
+[node name="SettingsSection" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn" instance=ExtResource("2")]
+unique_name_in_owner = true
+visible = false
+
+[node name="RightSpacer" type="Control" parent="MenuRootRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage/BtnPlay" to="." method="_on_play_pressed"]
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage/BtnSettings" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage/BtnQuit" to="." method="_on_quit_pressed"]
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage/BtnShootingRange" to="." method="_on_start_shooting_range_pressed"]
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage/BtnPlayBack" to="." method="_on_play_back_pressed"]
