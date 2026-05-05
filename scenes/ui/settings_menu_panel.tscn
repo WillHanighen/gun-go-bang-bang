@@ -3,28 +3,29 @@
 [ext_resource type="Script" uid="uid://br7r22o5284dt" path="res://scripts/ui/settings_menu_panel.gd" id="1"]
 
 [node name="SettingsMenuPanel" type="VBoxContainer"]
-custom_minimum_size = Vector2(460, 0)
-theme_override_constants/separation = 10
+custom_minimum_size = Vector2(640, 0)
+theme_override_constants/separation = 14
 script = ExtResource("1")
 
 [node name="Title" type="Label" parent="."]
 layout_mode = 2
 text = "Settings"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 26
 
 [node name="SettingsTabs" type="TabContainer" parent="."]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 308)
-theme_override_font_sizes/font_size = 14
+custom_minimum_size = Vector2(0, 440)
+theme_override_font_sizes/font_size = 16
 
 [node name="General" type="MarginContainer" parent="SettingsTabs"]
 layout_mode = 2
-theme_override_constants/margin_left = 6
-theme_override_constants/margin_right = 6
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_bottom = 10
 
 [node name="ScrollGeneral" type="ScrollContainer" parent="SettingsTabs/General"]
 layout_mode = 2
@@ -32,42 +33,51 @@ size_flags_vertical = 3
 
 [node name="MarginGen" type="MarginContainer" parent="SettingsTabs/General/ScrollGeneral"]
 layout_mode = 2
-theme_override_constants/margin_left = 2
-theme_override_constants/margin_right = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_right = 4
 
 [node name="Column" type="VBoxContainer" parent="SettingsTabs/General/ScrollGeneral/MarginGen"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 18
+custom_minimum_size = Vector2(560, 0)
 
 [node name="SectionAudio" type="Label" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(1, 0.92, 0.55, 1)
 text = "Audio"
 
 [node name="MasterRow" type="HBoxContainer" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 16
 
 [node name="MasterCaption" type="Label" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/MasterRow"]
-custom_minimum_size = Vector2(122, 0)
+custom_minimum_size = Vector2(156, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 15
 text = "Master volume"
 
 [node name="MasterVolumeSlider" type="HSlider" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/MasterRow"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(220, 28)
 size_flags_horizontal = 3
 max_value = 100.0
 step = 1.0
 value = 100.0
 
-[node name="MasterVolumeSpin" type="SpinBox" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/MasterRow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(102, 0)
+[node name="MasterSpinWrap" type="MarginContainer" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/MasterRow"]
 layout_mode = 2
 size_flags_horizontal = 0
+theme_override_constants/margin_left = 72
+
+[node name="MasterVolumeSpin" type="SpinBox" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/MasterRow/MasterSpinWrap"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(118, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
 min_value = 0.0
 max_value = 100.0
 step = 1.0
@@ -78,34 +88,42 @@ alignment = 2
 
 [node name="SectionControls" type="Label" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(1, 0.92, 0.55, 1)
 text = "Controls"
 
 [node name="MouseRow" type="HBoxContainer" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 16
 
 [node name="MouseCaption" type="Label" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/MouseRow"]
-custom_minimum_size = Vector2(122, 0)
+custom_minimum_size = Vector2(156, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 15
 text = "Mouse speed"
 
 [node name="MouseSensSlider" type="HSlider" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/MouseRow"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(220, 28)
 size_flags_horizontal = 3
 min_value = 25.0
 max_value = 250.0
 step = 1.0
 value = 100.0
 
-[node name="MouseSensSpin" type="SpinBox" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/MouseRow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(102, 0)
+[node name="MouseSpinWrap" type="MarginContainer" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/MouseRow"]
 layout_mode = 2
 size_flags_horizontal = 0
+theme_override_constants/margin_left = 72
+
+[node name="MouseSensSpin" type="SpinBox" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/MouseRow/MouseSpinWrap"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(118, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
 min_value = 25.0
 max_value = 250.0
 step = 1.0
@@ -117,38 +135,47 @@ alignment = 2
 [node name="InvertMouseCheck" type="CheckBox" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 16
 text = "Invert mouse look (vertical)"
 
 [node name="SectionVideo" type="Label" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(1, 0.92, 0.55, 1)
 text = "Video"
 
 [node name="FovRow" type="HBoxContainer" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 16
 
 [node name="FovCaption" type="Label" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/FovRow"]
-custom_minimum_size = Vector2(122, 0)
+custom_minimum_size = Vector2(156, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 15
 text = "Field of view"
 
 [node name="FovSlider" type="HSlider" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/FovRow"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(220, 28)
 size_flags_horizontal = 3
 min_value = 70.0
 max_value = 100.0
 step = 1.0
 value = 75.0
 
-[node name="FovSpin" type="SpinBox" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/FovRow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(102, 0)
+[node name="FovSpinWrap" type="MarginContainer" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/FovRow"]
 layout_mode = 2
 size_flags_horizontal = 0
+theme_override_constants/margin_left = 72
+
+[node name="FovSpin" type="SpinBox" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column/FovRow/FovSpinWrap"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(118, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
 min_value = 70.0
 max_value = 100.0
 step = 1.0
@@ -160,25 +187,28 @@ alignment = 2
 [node name="FullscreenCheck" type="CheckBox" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 16
 text = "Fullscreen"
 
 [node name="VsyncCheck" type="CheckBox" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 16
 text = "Vsync"
 
 [node name="HintGeneral" type="Label" parent="SettingsTabs/General/ScrollGeneral/MarginGen/Column"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.65, 0.68, 0.72, 1)
 text = "General stuff saves automatically — tweak away."
 autowrap_mode = 3
 
 [node name="Keybinds" type="MarginContainer" parent="SettingsTabs"]
 layout_mode = 2
-theme_override_constants/margin_left = 6
-theme_override_constants/margin_right = 6
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_bottom = 10
 
 [node name="ScrollKeys" type="ScrollContainer" parent="SettingsTabs/Keybinds"]
 layout_mode = 2
@@ -186,38 +216,41 @@ size_flags_vertical = 3
 
 [node name="MarginKeys" type="MarginContainer" parent="SettingsTabs/Keybinds/ScrollKeys"]
 layout_mode = 2
-theme_override_constants/margin_left = 2
-theme_override_constants/margin_right = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_right = 4
 
 [node name="KeybindColumn" type="VBoxContainer" parent="SettingsTabs/Keybinds/ScrollKeys/MarginKeys"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 14
 
 [node name="KeybindIntro" type="Label" parent="SettingsTabs/Keybinds/ScrollKeys/MarginKeys/KeybindColumn"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 15
 text = "Click a binding, then press a key or mouse button. Esc backs out."
 autowrap_mode = 3
 
 [node name="KeybindList" type="VBoxContainer" parent="SettingsTabs/Keybinds/ScrollKeys/MarginKeys/KeybindColumn"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
 [node name="ResetBindingsBtn" type="Button" parent="SettingsTabs/Keybinds/ScrollKeys/MarginKeys/KeybindColumn"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+theme_override_font_sizes/font_size = 16
 text = "Reset keybinds to defaults"
 
 [node name="HintKeybinds" type="Label" parent="SettingsTabs/Keybinds/ScrollKeys/MarginKeys/KeybindColumn"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.65, 0.68, 0.72, 1)
 text = "Bindings save to user://input_bindings.json — delete that file if things get weird."
 autowrap_mode = 3
 
 [node name="BackButton" type="Button" parent="."]
 layout_mode = 2
-custom_minimum_size = Vector2(280, 0)
+custom_minimum_size = Vector2(360, 44)
+theme_override_font_sizes/font_size = 17
 text = "Back"
 
 [connection signal="tab_selected" from="SettingsTabs" to="." method="_on_settings_tab_selected"]

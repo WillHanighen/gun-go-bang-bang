@@ -204,15 +204,18 @@ func _build_keybind_rows() -> void:
 	for action in InputBindingsPersistence.REMAPPABLE_ORDER:
 		var row := HBoxContainer.new()
 		row.set_meta(&"action", action)
-		row.add_theme_constant_override(&"separation", 8)
+		row.add_theme_constant_override(&"separation", 14)
 
 		var caption := Label.new()
 		caption.text = bs.label_for_action(action) if bs else String(action)
-		caption.custom_minimum_size.x = 188
+		caption.custom_minimum_size.x = 236
+		caption.add_theme_font_size_override(&"font_size", 15)
 		caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		row.add_child(caption)
 
 		var bind_btn := Button.new()
+		bind_btn.custom_minimum_size = Vector2(0, 38)
+		bind_btn.add_theme_font_size_override(&"font_size", 15)
 		bind_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bind_btn.focus_mode = Control.FOCUS_ALL
 		bind_btn.set_meta(&"action", action)
