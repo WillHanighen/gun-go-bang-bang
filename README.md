@@ -2,23 +2,18 @@
 
 ## ive not decided on a name yet
 
-A **Godot 4.6** first-person shooting sandbox with a playful, slightly ridiculous vibe: procedural outdoor range, multiple firearms, ammo types, and simple ballistics (including penetration). Built for experimenting with weapon feel, not as a serious milsim or a shipped game.
+A **Godot 4.6** first-person project pivoting toward **survival / zombie-apocalypse** gameplay: procedural **shooting range** for now (weapon pickups, grid inventory, ballistics including penetration), with **grounded movement** (walk, sprint, crouch, jump) instead of arena-style skill movement. Still a codename sandbox, not a shipped-title commitment.
 
 ## Tone and direction
 
-This project should feel like a mix of:
+Creative target is **playful survival**: zombies / scarcity / danger are on-brand, but **not** nitty-gritty sims, grimdark misery, or tacticool cosplay. Think tension plus jokes, not “authentic suffering.”
 
-- **TABG-style goofiness**: toy-box energy, weird charm, and a willingness to be a little stupid on purpose
-- **STRAFTAT-style tech**: fast, sharp, mechanical, and clean in the ways the sandbox actually feels to play
+- Keep **toyetic, readable** characters (pill silhouettes, accessories) and room for dumb-fun weapons — goofy survival, not faux-realism.
+- **Movement and moment-to-moment combat** should skew **readable and weighty** over Krunker-like air control or wall-tech.
+- Systems can stay crunchy (inventory, ballistics) while **UI and copy** stay light and punchy where it helps.
+- Avoid lore dumps and tacticool framing unless it is clearly a joke.
 
-The target is **goofy-tech**, not grim-tactical. That means:
-
-- weapon handling should feel expressive and fun first, realistic second
-- systems can be crunchy, but presentation should stay playful and readable
-- the sandbox should reward experimentation, odd combinations, and "what if this was a bad idea?" moments
-- avoid lore-heavy, military-sim, or self-important framing unless it is clearly being used as a joke
-
-If something has to choose between "serious and authentic" vs "funny, punchy, and memorable," the project should usually prefer the second option.
+If something has to choose between "serious authenticity" and "funny, memorable, still fun to play," the project should usually prefer the second option.
 
 ## Requirements
 
@@ -30,7 +25,7 @@ Clone the repo and open the project folder in the Godot editor, or run the main 
 godot --path /path/to/gun-go-bang-bang
 ```
 
-The entry scene is `res://scenes/ui/main_menu.tscn`; from there you reach the playable **shooting range** at `res://scenes/range/shooting_range.tscn`.
+The entry scene is `res://scenes/ui/main_menu.tscn`; from there you reach the playable **shooting range** at `res://scenes/range/shooting_range.tscn`, or **Zombie Apocalypse** at `res://scenes/survival/zombie_arena.tscn` (simple horde + pickups; expand later).
 
 ## Controls
 
@@ -63,6 +58,7 @@ When you reach the playable **shooting range** from **Play → Shooting range**,
 | Path                 | Role                                                                 |
 | -------------------- | -------------------------------------------------------------------- |
 | `scenes/range/`      | Shooting range scene; pickups and authored props                     |
+| `scenes/survival/`   | Zombie arena horde mode (WIP)                                        |
 | `scenes/ui/`         | Main menu (+ 3D `main_menu_showcase` backdrop); settings panel reused by pause and menu |
 | `scenes/player/`     | Player body (pill silhouette), camera, weapon view, inventory        |
 | `scenes/pickups/`    | Weapon pickup scenes                                                 |
@@ -71,6 +67,7 @@ When you reach the playable **shooting range** from **Play → Shooting range**,
 | `scripts/data/`      | Caliber and weapon registration (`ammo_*`, `weapons_*`)              |
 | `scripts/player/`    | Movement, `WeaponManager`, inventory, spread, shots, decals          |
 | `scripts/range/`     | Environment and target builders, range logic                         |
+| `scripts/survival/`  | Zombie horde mode (arena + zombie actors)                            |
 | `scripts/ui/`        | HUD, inventory UI, pause menu, main menu, shared settings UI         |
 | `scripts/pickups/`   | Pickup behavior                                                      |
 | `scripts/resources/` | `WeaponResource`, `CaliberResource`                                  |

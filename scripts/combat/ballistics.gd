@@ -1,6 +1,7 @@
 class_name Ballistics
 
 const MATERIAL_RESISTANCE := {
+	"flesh": 0.15,
 	"wood": 0.2,
 	"thin_metal": 0.5,
 	"concrete": 0.8,

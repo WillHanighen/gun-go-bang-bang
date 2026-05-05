@@ -10,14 +10,13 @@ Do not treat it as locked branding, the shipped title, or a deliberate serious i
 
 ## Creative direction
 
-Aim for a **goofy-tech** identity:
+Aim for **playful survival** — zombies, scarcity, threat, and scavenging are fine, but the vibe stays **goofy and toyetic**, not grim tactical or nitty-gritty simulation.
 
-- **Goofy like TABG**: playful, toyetic, a little absurd, willing to be silly on purpose
-- **Techy like STRAFTAT**: sharp movement, clean readability, crisp weapon feel, strong mechanical clarity
-- Lean into **pill-shaped player models** as part of the visual identity instead of treating them like a placeholder to be replaced with serious humanoids
-    - The pills should have distinct features, such as visors, hats, and other accessories
+- **Goofy like TABG**: playful, absurd on purpose, willing to be stupid-fun; pill people with visors, hats, and accessories stay the look (not “realistic survivors”)
+- **Survival framing**: readable stakes (gear, danger, pressure) without misery realism, inventory soup, or self-important military fantasy
+- **Feel**: grounded movement and **mechanical clarity** (weapon feedback, UI, combat read) — crisp where it helps playability, not “arcade skill-movement” for its own sake
 
-The result should feel like a sandbox full of clever guns and chaotic ideas, not a grim milsim.
+The result should feel like a **survival-ish** toy box, not a gray milsim or a hardcore life sim.
 
 ## When making changes
 
@@ -29,6 +28,7 @@ Prefer:
 - pill silhouettes and toy-like character readability over realistic soldier proportions
 - fast iteration and experimentation over lore or worldbuilding seriousness
 - mechanics that are easy to understand but still have room for mastery
+- survival ideas (loot, threats, light resource pressure) when they stay **light and readable**, not sim-for-sim’s-sake
 
 Avoid:
 
@@ -36,6 +36,7 @@ Avoid:
 - overly serious naming, copy, or presentation
 - realism that makes the game less fun
 - systems that become tedious just to feel authentic
+- grim, gritty, or “authentic suffering” tone — keep it cheeky
 
 Also update docs about changes, preventing them from becoming outdated or inaccurate.
 

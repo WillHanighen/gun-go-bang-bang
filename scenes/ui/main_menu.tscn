@@ -1,37 +1,36 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dpf4xk8asuibo"]
 
-[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1"]
+[ext_resource type="Script" uid="uid://cqdbfbq5mm3su" path="res://scripts/ui/main_menu.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/settings_menu_panel.tscn" id="2"]
-[ext_resource type="PackedScene" path="res://scenes/ui/main_menu_showcase.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://cwvfucuwh5f2o" path="res://scenes/ui/main_menu_showcase.tscn" id="3"]
 
-[node name="MainMenu" type="Control"]
+[node name="MainMenu" type="Control" unique_id=637505787]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 script = ExtResource("1")
 
-[node name="BackgroundViewportContainer" type="SubViewportContainer" parent="."]
+[node name="BackgroundViewportContainer" type="SubViewportContainer" parent="." unique_id=340309850]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-stretch = true
 mouse_filter = 2
+stretch = true
 
-[node name="BackgroundViewport" type="SubViewport" parent="BackgroundViewportContainer"]
+[node name="BackgroundViewport" type="SubViewport" parent="BackgroundViewportContainer" unique_id=973979886]
 handle_input_locally = false
-render_target_update_mode = 2
-audio_listener_enable_3d = false
+size = Vector2i(1152, 648)
+render_target_update_mode = 4
 
-[node name="ShowcaseScene" parent="BackgroundViewportContainer/BackgroundViewport" instance=ExtResource("3")]
+[node name="ShowcaseScene" parent="BackgroundViewportContainer/BackgroundViewport" unique_id=559252622 instance=ExtResource("3")]
 
-[node name="Backdrop" type="ColorRect" parent="."]
+[node name="Backdrop" type="ColorRect" parent="." unique_id=782411274]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -41,7 +40,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.03, 0.04, 0.058, 0.58)
 
-[node name="MenuRootRow" type="HBoxContainer" parent="."]
+[node name="MenuRootRow" type="HBoxContainer" parent="." unique_id=606639320]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -50,7 +49,7 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
-[node name="MenuPad" type="MarginContainer" parent="MenuRootRow"]
+[node name="MenuPad" type="MarginContainer" parent="MenuRootRow" unique_id=1606279612]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -59,98 +58,104 @@ theme_override_constants/margin_top = 44
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 44
 
-[node name="MenuColumnCenter" type="CenterContainer" parent="MenuRootRow/MenuPad"]
+[node name="MenuColumnCenter" type="CenterContainer" parent="MenuRootRow/MenuPad" unique_id=802735267]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="MenuColumn" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter"]
+[node name="MenuColumn" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter" unique_id=918572714]
 layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
 
-[node name="Title" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
+[node name="Title" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn" unique_id=1521641896]
 layout_mode = 2
-text = "(codename) Gun Go Bang Bang"
-horizontal_alignment = 1
 theme_override_colors/font_outline_color = Color(0.12, 0.15, 0.2, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 26
-
-[node name="Tagline" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
-layout_mode = 2
-text = "A slightly ridiculous shooting sandbox · pick your nonsense level"
+text = "(codename) Gun Go Bang Bang"
 horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn" unique_id=1369691493]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 1)
 theme_override_font_sizes/font_size = 14
+text = "A slightly ridiculous shooting sandbox · pick your nonsense level"
+horizontal_alignment = 1
 autowrap_mode = 3
-custom_minimum_size = Vector2(420, 0)
 
-[node name="MainPage" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
+[node name="MainPage" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn" unique_id=1536620879]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="BtnPlay" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage"]
-layout_mode = 2
+[node name="BtnPlay" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage" unique_id=359422411]
 custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
 text = "Play"
 
-[node name="BtnSettings" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage"]
-layout_mode = 2
+[node name="BtnSettings" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage" unique_id=1479018740]
 custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
 text = "Settings"
 
-[node name="BtnQuit" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage"]
-layout_mode = 2
+[node name="BtnQuit" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage" unique_id=1891500918]
 custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
 text = "Quit to Desktop"
 
-[node name="PlayPage" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
+[node name="PlayPage" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn" unique_id=331792305]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="PlayTitle" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage"]
+[node name="PlayTitle" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage" unique_id=1573161034]
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "Game modes"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 20
 
-[node name="PlaySubtitle" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage"]
+[node name="PlaySubtitle" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage" unique_id=235571583]
+custom_minimum_size = Vector2(380, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.71, 0.8, 1)
+theme_override_font_sizes/font_size = 12
 text = "More modes can land here whenever we get distracted enough."
 horizontal_alignment = 1
 autowrap_mode = 3
-custom_minimum_size = Vector2(380, 0)
-theme_override_colors/font_color = Color(0.65, 0.71, 0.8, 1)
-theme_override_font_sizes/font_size = 12
 
-[node name="BtnShootingRange" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage"]
-layout_mode = 2
+[node name="BtnShootingRange" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage" unique_id=626867753]
 custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
 text = "Shooting range (sandbox)"
 
-[node name="BtnMultiplayer" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage"]
-layout_mode = 2
+[node name="BtnZombies" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage" unique_id=1847214828]
 custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+text = "Zombie Apocalypse "
+
+[node name="BtnMultiplayer" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage" unique_id=219794195]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+tooltip_text = "Not wired yet. Go bother a friend locally for now."
 disabled = true
 text = "Multiplayer (eventually)"
-tooltip_text = "Not wired yet. Go bother a friend locally for now."
 
-[node name="BtnPlayBack" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage"]
-layout_mode = 2
+[node name="BtnPlayBack" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage" unique_id=2049702211]
 custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
 text = "Back"
 
-[node name="SettingsSection" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn" instance=ExtResource("2")]
+[node name="SettingsSection" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn" unique_id=1073209938 instance=ExtResource("2")]
 unique_name_in_owner = true
 visible = false
+layout_mode = 2
 
-[node name="RightSpacer" type="Control" parent="MenuRootRow"]
+[node name="RightSpacer" type="Control" parent="MenuRootRow" unique_id=1723524604]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -159,4 +164,5 @@ size_flags_vertical = 3
 [connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage/BtnSettings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage/BtnQuit" to="." method="_on_quit_pressed"]
 [connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage/BtnShootingRange" to="." method="_on_start_shooting_range_pressed"]
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage/BtnZombies" to="." method="_on_btn_zombies_menu_pressed"]
 [connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage/BtnPlayBack" to="." method="_on_play_back_pressed"]

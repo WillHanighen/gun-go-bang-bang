@@ -2,9 +2,10 @@ class_name RangeEnvironmentBuilder
 extends RefCounted
 
 
-static func build(parent: Node3D) -> void:
+static func build(parent: Node3D, include_distance_markers: bool = true) -> void:
 	_create_environment(parent)
-	_create_distance_markers(parent)
+	if include_distance_markers:
+		_create_distance_markers(parent)
 
 
 static func _create_environment(parent: Node3D) -> void:

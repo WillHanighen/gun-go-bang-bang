@@ -57,5 +57,5 @@ fov = 54.5
 transform = Transform3D(-0.7435769, 0, 0.66865057, 0, 1, 0, -0.66865057, 0, -0.7435769, 1.040754, 0.94759476, -0.9312074)
 script = null
 
-[node name="Sketchfab_Scene" parent="." unique_id=1788977695 instance=ExtResource("3_1im34")]
+[node name="Sketchfab_Scene" parent="." unique_id=1086791173 instance=ExtResource("3_1im34")]
 transform = Transform3D(0.009691621, 0, -0.0024642397, 0, 0.01, 0, 0.0024642397, 0, 0.009691621, 1.5726056, 0, -1.4304775)

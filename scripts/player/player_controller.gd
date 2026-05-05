@@ -1,20 +1,15 @@
 extends CharacterBody3D
 
-const SPEED := 5.5
-const SPRINT_SPEED := 9.5
+const SPEED := 4.25
+const SPRINT_SPEED := 6.85
 const CROUCH_SPEED_MULT := 0.55
-const ADS_SPEED := 5.25
-const JUMP_VELOCITY := 4.5
+const ADS_SPEED := 3.15
+const JUMP_VELOCITY := 4.0
 
-const GROUND_ACCEL := 30.0
-const GROUND_DECEL := 36.0
-const AIR_ACCEL := 12.0
-const AIR_MAX_SPEED := 6.5
-const WALL_JUMP_UP := 3.5
-const WALL_JUMP_PUSH := 5.5
-const WALL_JUMP_GRACE_TIME := 0.18
-const WALL_PROBE_LEN := 0.58
-const WALL_PROBE_HEIGHT := 0.65
+const GROUND_ACCEL := 22.0
+const GROUND_DECEL := 26.0
+const AIR_ACCEL := 6.0
+const AIR_DECEL := 14.0
 
 const STANDING_HEAD_Y := 0.7
 const CROUCH_HEAD_Y := 0.38
@@ -47,7 +42,6 @@ signal interaction_prompt_changed(prompt: String)
 
 var is_aiming := false
 var is_sprinting := false
-var is_sliding := false
 var _ads_progress := 0.0
 var _sprint_spread := 0.0
 var _walk_spread := 0.0
@@ -57,8 +51,6 @@ var _foot_capsule_offset := 0.0
 var _capsule_radius := 0.3
 var _recoil_v_recover := 0.0
 var _recoil_h_recover := 0.0
-var _wall_jump_normal := Vector3.ZERO
-var _wall_jump_grace_timer := 0.0
 var _interaction_target: WeaponPickup
 var _interaction_prompt := ""
 
@@ -153,7 +145,6 @@ func _physics_process(delta: float) -> void:
 	var on_floor := is_on_floor()
 
 	_update_crouch(delta, Input.is_action_pressed("crouch"))
-	_update_wall_jump_cache(delta, on_floor)
 
 	is_sprinting = (
 		on_floor
@@ -169,12 +160,9 @@ func _physics_process(delta: float) -> void:
 		_apply_ground_horizontal_move(delta, move_dir, current_speed)
 	else:
 		velocity += get_gravity() * delta
-		var did_wall_jump := jump_pressed and _try_wall_jump()
-		if not did_wall_jump:
-			_apply_air_horizontal_move(delta, move_dir, current_speed)
+		_apply_air_horizontal_move(delta, move_dir, current_speed)
 
 	move_and_slide()
-	_update_wall_jump_cache(0.0, is_on_floor())
 
 	head.position.y = lerpf(STANDING_HEAD_Y, CROUCH_HEAD_Y, _crouch_progress)
 	var on_floor_now := is_on_floor()
@@ -213,105 +201,12 @@ func _apply_ground_horizontal_move(delta: float, direction: Vector3, move_speed:
 
 
 func _apply_air_horizontal_move(delta: float, direction: Vector3, move_speed: float) -> void:
-	if direction.length_squared() < 0.0001:
-		return
-	var wish_dir := direction.normalized()
-	var capped_speed := minf(move_speed, AIR_MAX_SPEED)
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
-	var current_along := horizontal.dot(wish_dir)
-	var add_speed := capped_speed - current_along
-	if add_speed <= 0.0:
-		return
-	var accel_speed := minf(AIR_ACCEL * capped_speed * delta, add_speed)
-	horizontal += wish_dir * accel_speed
+	var target := direction * move_speed
+	var accel := AIR_ACCEL if direction.length_squared() > 0.01 else AIR_DECEL
+	horizontal = horizontal.move_toward(target, accel * delta)
 	velocity.x = horizontal.x
 	velocity.z = horizontal.z
-
-
-func _update_wall_jump_cache(delta: float, on_floor: bool) -> void:
-	if on_floor:
-		_wall_jump_grace_timer = 0.0
-		_wall_jump_normal = Vector3.ZERO
-		return
-
-	var wall_normal := _get_wall_jump_surface_normal()
-	if wall_normal.length_squared() > 0.0001:
-		_wall_jump_normal = wall_normal
-		_wall_jump_grace_timer = WALL_JUMP_GRACE_TIME
-		return
-
-	_wall_jump_grace_timer = maxf(_wall_jump_grace_timer - delta, 0.0)
-	if _wall_jump_grace_timer <= 0.0:
-		_wall_jump_normal = Vector3.ZERO
-
-
-func _try_wall_jump() -> bool:
-	if _wall_jump_grace_timer <= 0.0:
-		return false
-	var away := Vector3(_wall_jump_normal.x, 0.0, _wall_jump_normal.z)
-	if away.length_squared() < 0.0001:
-		return false
-	away = away.normalized()
-	velocity.x = away.x * WALL_JUMP_PUSH
-	velocity.z = away.z * WALL_JUMP_PUSH
-	velocity.y = WALL_JUMP_UP
-	_wall_jump_grace_timer = 0.0
-	_wall_jump_normal = Vector3.ZERO
-	return true
-
-
-func _get_wall_jump_surface_normal() -> Vector3:
-	if is_on_wall():
-		for i in get_slide_collision_count():
-			var collision := get_slide_collision(i)
-			var normal := collision.get_normal()
-			if absf(normal.y) < 0.2:
-				return Vector3(normal.x, 0.0, normal.z).normalized()
-
-	return _probe_nearest_wall_normal()
-
-
-func _probe_nearest_wall_normal() -> Vector3:
-	var origin := global_position + Vector3(0.0, WALL_PROBE_HEIGHT, 0.0)
-	var horizontal_velocity := Vector3(velocity.x, 0.0, velocity.z)
-	var probe_dirs: Array[Vector3] = [
-		Vector3.LEFT,
-		Vector3.RIGHT,
-		Vector3.FORWARD,
-		Vector3.BACK
-	]
-	if horizontal_velocity.length_squared() > 0.01:
-		var velocity_dir := horizontal_velocity.normalized()
-		probe_dirs.append(velocity_dir)
-		probe_dirs.append(-velocity_dir)
-
-	var facing_dir := -global_basis.z
-	probe_dirs.append(Vector3(facing_dir.x, 0.0, facing_dir.z).normalized())
-
-	var space := get_world_3d().direct_space_state
-	var best_normal := Vector3.ZERO
-	var best_distance := INF
-	var mask := collision_mask if collision_mask != 0 else 1
-
-	for direction in probe_dirs:
-		if direction.length_squared() < 0.0001:
-			continue
-		var query := PhysicsRayQueryParameters3D.create(origin, origin + direction.normalized() * WALL_PROBE_LEN)
-		query.collision_mask = mask
-		query.exclude = [get_rid()]
-		var hit := space.intersect_ray(query)
-		if hit.is_empty():
-			continue
-		var normal: Vector3 = hit["normal"]
-		if absf(normal.y) >= 0.2:
-			continue
-		var hit_pos: Vector3 = hit["position"]
-		var hit_distance := origin.distance_to(hit_pos)
-		if hit_distance < best_distance:
-			best_distance = hit_distance
-			best_normal = Vector3(normal.x, 0.0, normal.z).normalized()
-
-	return best_normal
 
 
 func apply_recoil(vertical_deg: float, horizontal_deg: float) -> void:

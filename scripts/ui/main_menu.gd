@@ -1,6 +1,7 @@
 extends Control
 
 const SHOOTING_RANGE_PATH := "res://scenes/range/shooting_range.tscn"
+const ZOMBIE_ARENA_PATH := "res://scenes/survival/zombie_arena.tscn"
 
 @onready var _main_page: Control = %MainPage
 @onready var _play_page: Control = %PlayPage
@@ -41,6 +42,10 @@ func _on_play_back_pressed() -> void:
 
 func _on_start_shooting_range_pressed() -> void:
 	get_tree().change_scene_to_file(SHOOTING_RANGE_PATH)
+
+
+func _on_btn_zombies_menu_pressed() -> void:
+	get_tree().change_scene_to_file(ZOMBIE_ARENA_PATH)
 
 
 func _on_settings_pressed() -> void:

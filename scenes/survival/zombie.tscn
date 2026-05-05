@@ -1,0 +1,23 @@
+[gd_scene format=3 load_steps=4]
+
+[ext_resource type="Script" path="res://scripts/survival/zombie.gd" id="1"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_z"]
+radius = 0.3
+height = 1.7
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_z"]
+
+[node name="Zombie" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 3
+floor_stop_on_slope = true
+floor_max_angle = 0.785398
+script = ExtResource("1")
+
+[node name="PillCollider" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_z")
+
+[node name="Pill" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.58, 0, 0, 0, 0.88, 0, 0, 0, 0.58, 0, 0, 0)
+mesh = SubResource("CapsuleMesh_z")
