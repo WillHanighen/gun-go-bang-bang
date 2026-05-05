@@ -1,8 +1,8 @@
-[gd_scene format=3 uid="uid://cwvfucuwh5f2o"]
+[gd_scene format=3 uid="uid://c32t0l1sllhrw"]
 
-[ext_resource type="Script" uid="uid://biwdq0xp84bvv" path="res://scripts/ui/main_menu_showcase.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://dph2boca2phso" path="res://scenes/player/player.tscn" id="2_qo4gr"]
-[ext_resource type="PackedScene" uid="uid://ca58ocugcdr8m" path="res://assets/Gnome Chompski/Gnome Chompski.glb" id="3_1im34"]
+[ext_resource type="Script" uid="uid://biwdq0xp84bvv" path="res://scripts/ui/main_menu_showcase.gd" id="1_qccst"]
+[ext_resource type="PackedScene" uid="uid://dph2boca2phso" path="res://scenes/player/player.tscn" id="2_unqtb"]
+[ext_resource type="PackedScene" uid="uid://ca58ocugcdr8m" path="res://assets/Gnome Chompski/Gnome Chompski.glb" id="3_ulokn"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.32, 0.48, 0.74, 1)
@@ -27,8 +27,14 @@ size = Vector2(24, 24)
 albedo_color = Color(0.28, 0.32, 0.38, 1)
 roughness = 0.95
 
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_qccst"]
+
+[sub_resource type="StandardMaterial3D" id="ZombieMat"]
+albedo_color = Color(0.35, 0.52, 0.38, 1)
+roughness = 0.88
+
 [node name="MainMenuShowcase" type="Node3D" unique_id=559252622]
-script = ExtResource("1")
+script = ExtResource("1_qccst")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=37077009]
 environment = SubResource("Environment_preview")
@@ -53,9 +59,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.057785273, 1.52, 2.42)
 current = true
 fov = 54.5
 
-[node name="Player" parent="." unique_id=1155665388 instance=ExtResource("2_qo4gr")]
-transform = Transform3D(-0.7503072, 0, 0.6610893, 0, 1, 0, -0.6610893, 0, -0.7503072, 1.1209481, 0.94759476, -0.9312074)
+[node name="Player" parent="." unique_id=1155665388 instance=ExtResource("2_unqtb")]
+transform = Transform3D(-0.6145332, 0, 0.7888911, 0, 1, 0, -0.7888911, 0, -0.6145332, 2.3356032, 0.94759476, -0.9312074)
 script = null
 
-[node name="Sketchfab_Scene" parent="." unique_id=1086791173 instance=ExtResource("3_1im34")]
-transform = Transform3D(0.009691621, 0, -0.0024642397, 0, 0.01, 0, 0.0024642397, 0, 0.009691621, 1.6527998, 0, -1.4304775)
+[node name="Sketchfab_Scene" parent="." unique_id=1086791173 instance=ExtResource("3_ulokn")]
+transform = Transform3D(0.009691621, 0, -0.0024642397, 0, 0.01, 0, 0.0024642397, 0, 0.009691621, 3.026343, 0, -1.4304775)
+
+[node name="Zombie" type="MeshInstance3D" parent="." unique_id=2072352066]
+transform = Transform3D(0.6, 0, 0, 0, 0.9, 0, 0, 0, 0.6, 0.68630624, 0.9369482, -2.8577483)
+mesh = SubResource("CapsuleMesh_qccst")
+surface_material_override/0 = SubResource("ZombieMat")

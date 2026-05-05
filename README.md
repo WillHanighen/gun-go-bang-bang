@@ -25,7 +25,15 @@ Clone the repo and open the project folder in the Godot editor, or run the main 
 godot --path /path/to/gun-go-bang-bang
 ```
 
-The entry scene is `res://scenes/ui/main_menu.tscn`; from there you reach the playable **shooting range** at `res://scenes/range/shooting_range.tscn`, or **Zombie Apocalypse** at `res://scenes/survival/zombie_arena.tscn` (simple horde + pickups; expand later).
+The entry scene is `res://scenes/ui/main_menu.tscn`; from there you reach the playable **shooting range** at `res://scenes/range/shooting_range.tscn`, or **Survival** via `res://scenes/ui/main_menu_survival.tscn` (save slots + load/new game) into `res://scenes/survival/zombie_arena.tscn` (horde + pickups; slot files are stub JSON under `user://` until real persistence lands).
+
+### Menus and pause
+
+- **Main menu** — Opens on the **Play** hub (Play / Settings / Quit). **Play** switches to **Game modes** (shooting range, Survival, placeholder multiplayer). **Settings** has **General** (master volume, mouse speed and vertical invert, FOV, fullscreen, vsync → `user://settings.cfg` via `GameSettings`) and **Keybinds** (keyboard/mouse → `user://input_bindings.json` via `InputBindingsSave`).
+- **Survival flow** — **Back** from the survival submenu returns to the main menu **already on Game modes** (implementation: root meta `main_menu_show_game_modes`, consumed in `scripts/ui/main_menu.gd`).
+- **Pause** (`Esc` in-game, `scripts/ui/pause_menu.gd`) — **Quit to Desktop** uses a confirmation dialog that distinguishes save-slot files on disk from anything only held in the current session. **Quit to Main Menu** does not show that dialog.
+
+More detail for contributors: [`learnings/menus-and-flow.md`](learnings/menus-and-flow.md).
 
 ## Controls
 
@@ -58,8 +66,8 @@ When you reach the playable **shooting range** from **Play → Shooting range**,
 | Path                 | Role                                                                 |
 | -------------------- | -------------------------------------------------------------------- |
 | `scenes/range/`      | Shooting range scene; pickups and authored props                     |
-| `scenes/survival/`   | Zombie arena horde mode (WIP)                                        |
-| `scenes/ui/`         | Main menu (+ 3D `main_menu_showcase` backdrop); settings panel reused by pause and menu |
+| `scenes/survival/`   | Survival horde arena (WIP)                                           |
+| `scenes/ui/`         | Main menu (`main_menu_showcase` backdrop); survival slot menu + `main_menu_survival_showcase`; settings panel reused by pause and menus |
 | `scenes/player/`     | Player body (pill silhouette), camera, weapon view, inventory        |
 | `scenes/pickups/`    | Weapon pickup scenes                                                 |
 | `scripts/autoload/`  | `InputSetup` (default keymap), `WeaponDatabase` (calibers + weapons) |
@@ -67,7 +75,7 @@ When you reach the playable **shooting range** from **Play → Shooting range**,
 | `scripts/data/`      | Caliber and weapon registration (`ammo_*`, `weapons_*`)              |
 | `scripts/player/`    | Movement, `WeaponManager`, inventory, spread, shots, decals          |
 | `scripts/range/`     | Environment and target builders, range logic                         |
-| `scripts/survival/`  | Zombie horde mode (arena + zombie actors)                            |
+| `scripts/survival/`  | Survival horde mode (arena + zombie actors)                          |
 | `scripts/ui/`        | HUD, inventory UI, pause menu, main menu, shared settings UI         |
 | `scripts/pickups/`   | Pickup behavior                                                      |
 | `scripts/resources/` | `WeaponResource`, `CaliberResource`                                  |

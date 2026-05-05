@@ -133,10 +133,10 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 text = "Shooting range (sandbox)"
 
-[node name="BtnZombies" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage" unique_id=1847214828]
+[node name="BtnSurvival" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage" unique_id=1847214828]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
-text = "Zombie Apocalypse "
+text = "Survival"
 
 [node name="BtnMultiplayer" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage" unique_id=219794195]
 custom_minimum_size = Vector2(280, 0)
@@ -164,5 +164,5 @@ size_flags_vertical = 3
 [connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage/BtnSettings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/MainPage/BtnQuit" to="." method="_on_quit_pressed"]
 [connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage/BtnShootingRange" to="." method="_on_start_shooting_range_pressed"]
-[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage/BtnZombies" to="." method="_on_btn_zombies_menu_pressed"]
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage/BtnSurvival" to="." method="_on_survival_menu_pressed"]
 [connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/PlayPage/BtnPlayBack" to="." method="_on_play_back_pressed"]

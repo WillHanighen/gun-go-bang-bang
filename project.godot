@@ -17,8 +17,10 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+GameSettings="*res://scripts/autoload/game_settings.gd"
 EggScreenFx="*res://scripts/autoload/egg_screen_fx.gd"
 InputSetup="*res://scripts/autoload/input_setup.gd"
+InputBindingsSave="*res://scripts/autoload/input_bindings_save.gd"
 WeaponDatabase="*res://scripts/autoload/weapon_database.gd"
 
 [physics]
@@ -27,7 +29,7 @@ WeaponDatabase="*res://scripts/autoload/weapon_database.gd"
 
 [rendering]
 
-rendering_device/driver.windows="d3d12"
+rendering_device/driver.windows="vulkan"
 textures/vram_compression/import_etc2_astc=true
 anti_aliasing/quality/msaa_3d=3
 anti_aliasing/quality/screen_space_aa=2

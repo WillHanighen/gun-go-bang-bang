@@ -1,6 +1,6 @@
 extends CharacterBody3D
 
-const MOVE_SPEED := 2.65
+const MOVE_SPEED := 4.0
 const HEALTH_MAX := 55.0
 
 @onready var _mesh: MeshInstance3D = $Pill

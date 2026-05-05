@@ -6,6 +6,7 @@ const WeaponPickupScene := preload("res://scenes/pickups/weapon_pickup.tscn")
 const HUDScript := preload("res://scripts/ui/hud.gd")
 const PauseMenuScript := preload("res://scripts/ui/pause_menu.gd")
 const RangeEnvironmentBuilderScript := preload("res://scripts/range/range_environment_builder.gd")
+const SaveSlotFiles := preload("res://scripts/survival/survival_save_slots.gd")
 
 const M1911_MODEL := preload("res://assets/M1911/m1911_handgun 1k.glb")
 const M4A1_MODEL := preload("res://assets/M4A1/m4a1_rifle 1k.glb")
@@ -17,7 +18,22 @@ const ZOMBIE_COUNT := 12
 var player: CharacterBody3D
 
 
+func _apply_survival_menu_boot() -> void:
+	var root := get_tree().root
+	if not root.has_meta(&"survival_slot_index"):
+		return
+	var slot: int = root.get_meta(&"survival_slot_index")
+	root.remove_meta(&"survival_slot_index")
+	var write_stub := false
+	if root.has_meta(&"survival_write_stub"):
+		write_stub = root.get_meta(&"survival_write_stub")
+		root.remove_meta(&"survival_write_stub")
+	if write_stub:
+		SaveSlotFiles.write_new_game_stub(slot)
+
+
 func _ready() -> void:
+	_apply_survival_menu_boot()
 	RangeEnvironmentBuilderScript.build(self, false)
 	_build_floor()
 	_spawn_player()

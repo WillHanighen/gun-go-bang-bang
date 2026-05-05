@@ -1,0 +1,151 @@
+[gd_scene format=3 uid="uid://7s6ns7ctpoks"]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu_survival.gd" id="1_survival"]
+[ext_resource type="PackedScene" uid="uid://c32t0l1sllhrw" path="res://scenes/ui/main_menu_survival_showcase.tscn" id="2_showcase"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_menu_panel.tscn" id="3_settings"]
+
+[node name="SurvivalMainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_survival")
+
+[node name="BackgroundViewportContainer" type="SubViewportContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+stretch = true
+
+[node name="BackgroundViewport" type="SubViewport" parent="BackgroundViewportContainer"]
+handle_input_locally = false
+size = Vector2i(1152, 648)
+render_target_update_mode = 4
+
+[node name="MainMenuShowcase" parent="BackgroundViewportContainer/BackgroundViewport" instance=ExtResource("2_showcase")]
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.03, 0.04, 0.058, 0.62)
+
+[node name="MenuRootRow" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="MenuPad" type="MarginContainer" parent="MenuRootRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 40
+
+[node name="MenuColumnCenter" type="CenterContainer" parent="MenuRootRow/MenuPad"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="MenuColumn" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="Title" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0.12, 0.18, 0.14, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 26
+text = "Survival"
+horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.82, 0.76, 1)
+theme_override_font_sizes/font_size = 14
+text = "Pick a save slot, pretend your loot matters, then blame the gnome when it doesn't."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="HubPage" type="VBoxContainer" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="SlotHint" type="Label" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/HubPage"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "Save slots"
+horizontal_alignment = 1
+
+[node name="SaveSlotList" type="ItemList" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/HubPage"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 112)
+layout_mode = 2
+size_flags_horizontal = 3
+allow_reselect = true
+same_column_width = true
+
+[node name="BtnLoad" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/HubPage"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+disabled = true
+text = "Continue / Load slot"
+
+[node name="BtnNewGame" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/HubPage"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+text = "New game (this slot)"
+
+[node name="BtnSettings" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/HubPage"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+text = "Settings"
+
+[node name="BtnBack" type="Button" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/HubPage"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+text = "Back"
+
+[node name="SettingsSection" parent="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn" instance=ExtResource("3_settings")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="RightSpacer" type="Control" parent="MenuRootRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="OverwriteConfirm" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "Overwrite save?"
+dialog_text = "That slot already has a run. Start fresh here anyway? (It's just a stub save for now — real progress wiring comes later.)"
+ok_button_text = "Yeah, overwrite"
+
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/HubPage/BtnLoad" to="." method="_on_load_pressed"]
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/HubPage/BtnNewGame" to="." method="_on_new_game_pressed"]
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/HubPage/BtnSettings" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="MenuRootRow/MenuPad/MenuColumnCenter/MenuColumn/HubPage/BtnBack" to="." method="_on_back_pressed"]

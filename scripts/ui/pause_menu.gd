@@ -115,9 +115,13 @@ func _quit_confirmed() -> void:
 
 func _build_dialogs() -> void:
 	_quit_dialog = ConfirmationDialog.new()
-	_quit_dialog.title = "Leave the range?"
-	_quit_dialog.dialog_text = "Quit to desktop? Unsaved… nothing. But still."
-	_quit_dialog.ok_button_text = "Quit"
+	_quit_dialog.title = "Quit to desktop?"
+	_quit_dialog.dialog_text = (
+		"Shut the game down completely?\n\n"
+		+ "Warning: This will delete any unsaved progress."
+	)
+	_quit_dialog.ok_button_text = "Yeah, quit"
+	_quit_dialog.cancel_button_text = "Never mind"
 	_quit_dialog.confirmed.connect(_quit_confirmed)
 	add_child(_quit_dialog)
 

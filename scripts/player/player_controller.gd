@@ -1,10 +1,10 @@
 extends CharacterBody3D
 
-const SPEED := 4.25
-const SPRINT_SPEED := 6.85
-const CROUCH_SPEED_MULT := 0.55
+const SPEED := 5.5
+const SPRINT_SPEED := 8.75
+const CROUCH_SPEED_MULT := 0.65
 const ADS_SPEED := 3.15
-const JUMP_VELOCITY := 4.0
+const JUMP_VELOCITY := 5.0
 
 const GROUND_ACCEL := 22.0
 const GROUND_DECEL := 26.0
@@ -23,6 +23,7 @@ const ADS_RECOIL_MULT := 0.65
 
 const DEFAULT_FOV := 75.0
 const ADS_FOV := 50.0
+const ADS_FOV_RATIO := ADS_FOV / DEFAULT_FOV
 
 const RECOIL_RECOVERY_FRACTION := 0.55
 const RECOIL_IMPACT_MULT := 1.75
@@ -87,7 +88,9 @@ func _process(delta: float) -> void:
 		_ads_progress = maxf(_ads_progress - ads_speed * delta, 0.0)
 
 	var t := _ads_progress * _ads_progress * (3.0 - 2.0 * _ads_progress)
-	camera.fov = lerpf(DEFAULT_FOV, ADS_FOV, t)
+	var hip_fov: float = GameSettings.field_of_view
+	var ads_fov: float = hip_fov * ADS_FOV_RATIO
+	camera.fov = lerpf(hip_fov, ads_fov, t)
 	if inventory_open:
 		_set_interaction_target(null)
 	else:
@@ -121,9 +124,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		if weapon_manager.ammo_wheel_open:
 			weapon_manager.feed_wheel_mouse(event.relative)
 			return
-		var sens := MOUSE_SENSITIVITY * lerpf(1.0, ADS_SENSITIVITY_MULT, _ads_progress)
+		var sens: float = (
+			MOUSE_SENSITIVITY
+			* GameSettings.mouse_sensitivity_mult
+			* lerpf(1.0, ADS_SENSITIVITY_MULT, _ads_progress)
+		)
+		var pitch_invert := -1.0 if GameSettings.invert_mouse_y else 1.0
 		rotate_y(-event.relative.x * sens)
-		head.rotate_x(-event.relative.y * sens)
+		head.rotate_x(-event.relative.y * sens * pitch_invert)
 		head.rotation.x = clampf(head.rotation.x, deg_to_rad(-89), deg_to_rad(89))
 
 	if event.is_action_pressed("ui_cancel"):

@@ -1,7 +1,9 @@
 extends Control
 
 const SHOOTING_RANGE_PATH := "res://scenes/range/shooting_range.tscn"
-const ZOMBIE_ARENA_PATH := "res://scenes/survival/zombie_arena.tscn"
+const SURVIVAL_MENU_PATH := "res://scenes/ui/main_menu_survival.tscn"
+
+const _META_SHOW_GAME_MODES := &"main_menu_show_game_modes"
 
 @onready var _main_page: Control = %MainPage
 @onready var _play_page: Control = %PlayPage
@@ -12,6 +14,7 @@ func _ready() -> void:
 	get_tree().paused = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_settings_section.connect("back_requested", _on_settings_back)
+	_apply_survival_return_route()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -31,9 +34,22 @@ func _show_main() -> void:
 	_settings_section.visible = false
 
 
-func _on_play_pressed() -> void:
+func _show_game_modes() -> void:
 	_main_page.visible = false
 	_play_page.visible = true
+	_settings_section.visible = false
+
+
+func _apply_survival_return_route() -> void:
+	var root := get_tree().root
+	if not root.has_meta(_META_SHOW_GAME_MODES):
+		return
+	root.remove_meta(_META_SHOW_GAME_MODES)
+	_show_game_modes()
+
+
+func _on_play_pressed() -> void:
+	_show_game_modes()
 
 
 func _on_play_back_pressed() -> void:
@@ -44,8 +60,8 @@ func _on_start_shooting_range_pressed() -> void:
 	get_tree().change_scene_to_file(SHOOTING_RANGE_PATH)
 
 
-func _on_btn_zombies_menu_pressed() -> void:
-	get_tree().change_scene_to_file(ZOMBIE_ARENA_PATH)
+func _on_survival_menu_pressed() -> void:
+	get_tree().change_scene_to_file(SURVIVAL_MENU_PATH)
 
 
 func _on_settings_pressed() -> void:
