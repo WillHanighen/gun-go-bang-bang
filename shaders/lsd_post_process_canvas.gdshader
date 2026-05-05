@@ -21,6 +21,11 @@ uniform float saturation_push : hint_range(1.0, 2.2) = 1.52;
 uniform float hue_wobble : hint_range(0.0, 6.283) = 1.45;
 uniform float tint_strength : hint_range(0.0, 0.22) = 0.12;
 
+uniform float rainbow_strength : hint_range(0.0, 1.0) = 0.52;
+uniform float rainbow_scale : hint_range(0.4, 22.0) = 7.0;
+uniform float rainbow_flow : hint_range(0.0, 3.5) = 1.2;
+uniform float rainbow_twirl : hint_range(0.0, 2.5) = 0.85;
+
 uniform float kaleido_segments : hint_range(3.0, 14.0) = 7.0;
 uniform float kaleido_uv_mix : hint_range(0.0, 1.0) = 0.82;
 uniform float kaleido_spin : hint_range(-1.5, 1.5) = 0.095;
@@ -47,6 +52,35 @@ vec3 apply_hue_shift(vec3 rgb, float angle) {
 vec3 push_saturation(vec3 rgb, float amount) {
 	float lum = dot(rgb, vec3(0.299, 0.587, 0.114));
 	return clamp(mix(vec3(lum), rgb, amount), 0.0, 1.0);
+}
+
+vec3 rainbow_unit(float phase) {
+	return 0.5 + 0.5 * cos(TAU * (vec3(0.0, 1.0 / 3.0, 2.0 / 3.0) + phase));
+}
+
+vec3 apply_spatial_rainbow(vec3 rgb, vec2 uv_sample, float th, vec2 vp) {
+	float aspect_r = vp.x / max(vp.y, 1.0);
+	vec2 pn = (uv_sample - 0.5) * vec2(aspect_r, 1.0);
+	float ang = atan(pn.y, pn.x);
+	float rad = length(pn);
+	float phase = th * rainbow_flow
+			+ dot(pn, vec2(1.85, 1.05)) * rainbow_scale
+			+ rad * rainbow_scale * (1.05 + 0.4 * sin(th * 0.88))
+			+ ang * rainbow_twirl
+			+ 0.45 * sin(pn.x * rainbow_scale * 2.1 - th * 1.12)
+			+ 0.35 * cos(pn.y * rainbow_scale * 1.7 + th * 0.97);
+	vec3 rb = rainbow_unit(fract(phase * 0.1618));
+
+	float lu = dot(rgb, vec3(0.299, 0.587, 0.114));
+	float screen_gate = smoothstep(0.02, 0.55, lu);
+
+	vec3 scr = 1.0 - (1.0 - clamp(rgb, 0.0, 1.0)) * (1.0 - clamp(rb, 0.0, 1.0));
+	vec3 outc = mix(rgb, scr, rainbow_strength * 0.78 * screen_gate);
+
+	float add_amp = rainbow_strength * (0.22 + 0.62 * screen_gate);
+	outc = clamp(outc + (rb - vec3(0.5)) * add_amp * 1.65, 0.0, 1.0);
+
+	return outc;
 }
 
 vec2 kaleido_fold_uv(vec2 uv, float t, float segs) {
@@ -119,6 +153,7 @@ void fragment() {
 	vec3 prism = mix(spun, spun_b, mix(0.22, 0.48, sin(th * 0.673) * 0.5 + 0.5));
 
 	rgb = mix(rgb, prism, hue_amount);
+	rgb = apply_spatial_rainbow(rgb, uv_samp, th, viewport_pixels);
 
 	COLOR.rgb = mix(baseline, rgb, effect_strength);
 	COLOR.a = 1.0;
