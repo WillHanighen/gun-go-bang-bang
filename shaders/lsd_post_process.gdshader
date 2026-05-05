@@ -74,10 +74,12 @@ vec3 apply_spatial_rainbow(vec3 rgb, vec2 uv_sample, float th, vec2 vp) {
 	vec2 pn = (uv_sample - 0.5) * vec2(aspect_r, 1.0);
 	float ang = atan(pn.y, pn.x);
 	float rad = length(pn);
+	// Integer harmonics of ang only — raw ang has a π/-π seam on atan2's branch cut.
+	float ang_tw = sin(ang) + 0.55 * sin(2.0 * ang) + 0.42 * cos(3.0 * ang);
 	float phase = th * rainbow_flow
 			+ dot(pn, vec2(1.85, 1.05)) * rainbow_scale
 			+ rad * rainbow_scale * (1.05 + 0.4 * sin(th * 0.88))
-			+ ang * rainbow_twirl
+			+ ang_tw * rainbow_twirl
 			+ 0.45 * sin(pn.x * rainbow_scale * 2.1 - th * 1.12)
 			+ 0.35 * cos(pn.y * rainbow_scale * 1.7 + th * 0.97);
 	vec3 rb = rainbow_unit(fract(phase * 0.1618));
