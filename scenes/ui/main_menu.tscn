@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dpf4xk8asuibo"]
 
 [ext_resource type="Script" uid="uid://cqdbfbq5mm3su" path="res://scripts/ui/main_menu.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/ui/settings_menu_panel.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://djxvbdyr8w15q" path="res://scenes/ui/settings_menu_panel.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://cwvfucuwh5f2o" path="res://scenes/ui/main_menu_showcase.tscn" id="3"]
 
 [node name="MainMenu" type="Control" unique_id=637505787]
