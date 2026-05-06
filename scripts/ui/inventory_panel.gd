@@ -13,6 +13,13 @@ const EQUIPMENT_TO_BACKPACK_GAP := 96.0
 const EDGE_MARGIN := 32.0
 const FOOTER_GAP := 52.0
 const BASE_SCALE_MIN := 0.24
+const TOOLTIP_MAX_WIDTH := 280.0
+const TOOLTIP_PAD := 10.0
+const TOOLTIP_MOUSE_OFFSET := 16.0
+const TOOLTIP_TITLE_FONT := 15
+const TOOLTIP_BODY_FONT := 11
+const TOOLTIP_TITLE_LINES_MAX := 3
+const TOOLTIP_BODY_WRAP_MAX := 8
 
 var inventory: PlayerInventory
 
@@ -75,6 +82,8 @@ func _draw() -> void:
 		Color(0.72, 0.76, 0.82, 0.9)
 	)
 
+	_draw_hover_tooltip(metrics)
+
 
 func _gui_input(event: InputEvent) -> void:
 	if not visible or not inventory:
@@ -100,10 +109,9 @@ func _gui_input(event: InputEvent) -> void:
 			_drag_origin_position = hit.get("position", Vector2i.ZERO)
 			var hit_rect: Rect2 = hit.get("rect", Rect2())
 			var grabbed_entry := inventory.get_item(_drag_item_id)
-			var grabbed_weapon := grabbed_entry.get("weapon") as WeaponResource
 			var metrics := _get_metrics()
 			_drag_rotated = bool(grabbed_entry.get("rotated", false))
-			_drag_grab_cell = _get_grab_cell(event.position, hit_rect, grabbed_weapon, _drag_rotated, metrics)
+			_drag_grab_cell = _get_grab_cell(event.position, hit_rect, grabbed_entry, _drag_rotated, metrics)
 			_drag_start_mouse = event.position
 			queue_redraw()
 			accept_event()
@@ -211,13 +219,10 @@ func _draw_item(entry: Dictionary, layouts: Dictionary, metrics: Dictionary, alp
 	var container := StringName(entry.get("container", PlayerInventory.SLOT_BACKPACK))
 	if not layouts.has(container):
 		return
-	var weapon := entry.get("weapon") as WeaponResource
-	if not weapon:
-		return
 
 	var rotated := force_rotated if use_force_rotation else bool(entry.get("rotated", false))
 	var item_rect := _get_item_rect(entry, layouts[container] as Dictionary, metrics, rotated, use_force_rotation)
-	var fill_color := _get_item_color(weapon)
+	var fill_color := _get_item_color(entry)
 	fill_color.a *= alpha
 	draw_rect(item_rect, fill_color, true)
 	draw_rect(item_rect, Color(0.06, 0.06, 0.06, alpha), false, 2.0)
@@ -233,7 +238,7 @@ func _draw_item(entry: Dictionary, layouts: Dictionary, metrics: Dictionary, alp
 	)
 	_draw_wrapped_text(
 		font,
-		weapon.weapon_name,
+		_get_entry_display_name(entry),
 		name_rect,
 		item_font_size,
 		Color(0.96, 0.96, 0.96, alpha),
@@ -266,10 +271,6 @@ func _draw_item(entry: Dictionary, layouts: Dictionary, metrics: Dictionary, alp
 
 
 func _draw_dragged_item(entry: Dictionary, metrics: Dictionary) -> void:
-	var weapon := entry.get("weapon") as WeaponResource
-	if not weapon:
-		return
-
 	var cell_stride := _get_cell_step(metrics)
 	var drag_rect := Rect2(
 		_mouse_pos - Vector2(_drag_grab_cell.x, _drag_grab_cell.y) * cell_stride,
@@ -282,7 +283,12 @@ func _draw_dragged_item(entry: Dictionary, metrics: Dictionary) -> void:
 	}
 	_draw_item({
 		"id": entry.get("id", -1),
-		"weapon": weapon,
+		"weapon": entry.get("weapon"),
+		"item_type": entry.get("item_type", ""),
+		"display_name": entry.get("display_name", ""),
+		"category": entry.get("category", ""),
+		"count": entry.get("count", 1),
+		"size": entry.get("size", Vector2i(1, 1)),
 		"container": PlayerInventory.SLOT_BACKPACK,
 		"position": Vector2i.ZERO,
 		"rotated": _drag_rotated,
@@ -294,12 +300,11 @@ func _draw_drop_preview(entry: Dictionary, layouts: Dictionary, metrics: Diction
 	if target.is_empty():
 		return
 
-	var weapon := entry.get("weapon") as WeaponResource
 	var container := StringName(target.get("container", PlayerInventory.SLOT_BACKPACK))
 	var target_position: Vector2i = target.get("position", Vector2i.ZERO)
 	var layout := layouts.get(container, {}) as Dictionary
 	var preview_origin: Vector2 = layout.get("grid_origin", Vector2.ZERO)
-	var preview_size := _get_entry_size(entry, _drag_rotated, true) if container == PlayerInventory.SLOT_BACKPACK else weapon.get_inventory_size()
+	var preview_size := _get_entry_size(entry, _drag_rotated, true)
 	var preview_rect := Rect2(
 		preview_origin + Vector2(target_position.x, target_position.y) * _get_cell_step(metrics),
 		_get_item_pixel_size(preview_size, metrics)
@@ -336,8 +341,6 @@ func _find_drop_target(point: Vector2, item_id: int, metrics: Dictionary) -> Dic
 	if entry.is_empty():
 		return {}
 	var weapon := entry.get("weapon") as WeaponResource
-	if not weapon:
-		return {}
 
 	var hovered_item := _find_item_at(point)
 	var hovered_item_id := int(hovered_item.get("id", -1))
@@ -348,7 +351,7 @@ func _find_drop_target(point: Vector2, item_id: int, metrics: Dictionary) -> Dic
 		var grid_origin: Vector2 = layout.get("grid_origin", Vector2.ZERO)
 		var grid_size: Vector2i = layout.get("grid_size", Vector2i.ZERO)
 		var grid_rect := Rect2(grid_origin, _get_item_pixel_size(grid_size, metrics))
-		if grid_rect.has_point(point) and weapon.fits_equipment_slot(slot_name):
+		if weapon and grid_rect.has_point(point) and weapon.fits_equipment_slot(slot_name):
 			var local := point - grid_origin
 			var cell_stride := float(metrics.get("cell_size", CELL_SIZE) + metrics.get("cell_gap", CELL_GAP))
 			var hover_cell := Vector2i(floori(local.x / cell_stride), floori(local.y / cell_stride))
@@ -420,15 +423,10 @@ func _get_item_pixel_size(item_size: Vector2i, metrics: Dictionary) -> Vector2:
 	)
 
 
-func _get_grab_cell(mouse_position: Vector2, item_rect: Rect2, weapon: WeaponResource, rotated: bool, metrics: Dictionary) -> Vector2i:
-	if not weapon:
-		return Vector2i.ZERO
-
+func _get_grab_cell(mouse_position: Vector2, item_rect: Rect2, entry: Dictionary, rotated: bool, metrics: Dictionary) -> Vector2i:
 	var local := mouse_position - item_rect.position
 	var cell_stride := float(metrics.get("cell_size", CELL_SIZE) + metrics.get("cell_gap", CELL_GAP))
-	var item_grid_size := weapon.get_inventory_size()
-	if rotated:
-		item_grid_size = Vector2i(item_grid_size.y, item_grid_size.x)
+	var item_grid_size := _get_entry_size(entry, rotated, true)
 	return Vector2i(
 		clampi(floori(local.x / cell_stride), 0, item_grid_size.x - 1),
 		clampi(floori(local.y / cell_stride), 0, item_grid_size.y - 1)
@@ -550,10 +548,9 @@ func _get_cell_step(metrics: Dictionary) -> Vector2:
 
 func _get_entry_size(entry: Dictionary, force_rotated: bool = false, use_force_rotation: bool = false) -> Vector2i:
 	var weapon := entry.get("weapon") as WeaponResource
-	if not weapon:
-		return Vector2i.ZERO
 	var rotated := force_rotated if use_force_rotation else bool(entry.get("rotated", false))
-	var base_size := weapon.get_inventory_size()
+	var base_size: Vector2i = weapon.get_inventory_size() if weapon else entry.get("size", Vector2i(1, 1))
+	base_size = Vector2i(maxi(base_size.x, 1), maxi(base_size.y, 1))
 	return Vector2i(base_size.y, base_size.x) if rotated else base_size
 
 
@@ -630,7 +627,20 @@ func _fit_text_with_ellipsis(font: Font, text: String, max_width: float, font_si
 	return "..."
 
 
-func _get_item_color(weapon: WeaponResource) -> Color:
+func _get_item_color(entry: Dictionary) -> Color:
+	var weapon := entry.get("weapon") as WeaponResource
+	if not weapon:
+		match str(entry.get("category", "")):
+			"ammo":
+				return Color(0.82, 0.62, 0.22, 0.95)
+			"food":
+				return Color(0.42, 0.7, 0.36, 0.95)
+			"medicine":
+				return Color(0.76, 0.28, 0.32, 0.95)
+			"resource":
+				return Color(0.42, 0.48, 0.58, 0.95)
+			_:
+				return Color(0.5, 0.5, 0.56, 0.95)
 	match weapon.carry_class:
 		WeaponResource.CarryClass.SMALL:
 			return Color(0.28, 0.52, 0.7, 0.95)
@@ -666,6 +676,8 @@ func _get_slot_loadout_summary(slot_name: StringName) -> String:
 func _get_item_badge(entry: Dictionary) -> String:
 	if not inventory:
 		return ""
+	if not entry.get("weapon"):
+		return "x%d" % int(entry.get("count", 1))
 	var container := StringName(entry.get("container", PlayerInventory.SLOT_BACKPACK))
 	if not inventory.is_equipment_slot(container):
 		return ""
@@ -706,7 +718,7 @@ func _toggle_drag_rotation() -> void:
 		return
 
 	var weapon := entry.get("weapon") as WeaponResource
-	if not weapon:
+	if not weapon and StringName(entry.get("container", PlayerInventory.SLOT_BACKPACK)) != PlayerInventory.SLOT_BACKPACK:
 		return
 
 	var current_size := _get_entry_size(entry, _drag_rotated, true)
@@ -716,7 +728,160 @@ func _toggle_drag_rotation() -> void:
 	queue_redraw()
 
 
+func _get_entry_display_name(entry: Dictionary) -> String:
+	var weapon := entry.get("weapon") as WeaponResource
+	if weapon:
+		return weapon.weapon_name
+	var display_name := str(entry.get("display_name", ""))
+	if not display_name.is_empty():
+		return display_name
+	return str(entry.get("item_id", "Item"))
+
+
 func _rotate_grab_cell(grab_cell: Vector2i, current_size: Vector2i, next_rotated: bool) -> Vector2i:
 	if next_rotated:
 		return Vector2i(current_size.y - 1 - grab_cell.y, grab_cell.x)
 	return Vector2i(grab_cell.y, current_size.x - 1 - grab_cell.x)
+
+
+func _draw_hover_tooltip(metrics: Dictionary) -> void:
+	if _drag_item_id != -1 or not inventory:
+		return
+	var hit := _find_item_at(_mouse_pos)
+	if hit.is_empty():
+		return
+	var entry := inventory.get_item(int(hit.get("id", -1)))
+	if entry.is_empty():
+		return
+
+	var font := get_theme_default_font()
+	var panel_scale: float = metrics.get("scale", 1.0)
+	var pad := TOOLTIP_PAD * panel_scale
+	var max_w := minf(TOOLTIP_MAX_WIDTH * panel_scale, maxf(size.x - EDGE_MARGIN * 2.0, 120.0))
+	var inner_w := maxf(max_w - pad * 2.0, 40.0)
+	var title_fs := maxi(int(round(float(TOOLTIP_TITLE_FONT) * panel_scale)), 12)
+	var body_fs := maxi(int(round(float(TOOLTIP_BODY_FONT) * panel_scale)), 9)
+
+	var title := _get_entry_display_name(entry)
+	var title_lines := _wrap_text(font, title, inner_w, title_fs, TOOLTIP_TITLE_LINES_MAX)
+	var detail_sources := _tooltip_detail_lines(entry)
+	var detail_lines: Array[String] = []
+	for line in detail_sources:
+		for wrapped in _wrap_text(font, line, inner_w, body_fs, TOOLTIP_BODY_WRAP_MAX):
+			detail_lines.append(wrapped)
+
+	var line_gap := 2.0 * panel_scale
+	var block_gap := 6.0 * panel_scale
+	var content_h := 0.0
+	for _tl in title_lines:
+		content_h += float(title_fs) + line_gap
+	if not detail_lines.is_empty():
+		content_h += block_gap
+	for _dl in detail_lines:
+		content_h += float(body_fs) + line_gap
+
+	var tooltip_size := Vector2(max_w, pad * 2.0 + content_h)
+	var offs := TOOLTIP_MOUSE_OFFSET * panel_scale
+	var pos := _mouse_pos + Vector2(offs, offs)
+	pos.x = clampf(pos.x, EDGE_MARGIN, maxf(EDGE_MARGIN, size.x - EDGE_MARGIN - tooltip_size.x))
+	pos.y = clampf(pos.y, EDGE_MARGIN, maxf(EDGE_MARGIN, size.y - EDGE_MARGIN - tooltip_size.y))
+	if pos.y + tooltip_size.y > size.y - FOOTER_GAP:
+		pos.y = maxf(EDGE_MARGIN, _mouse_pos.y - tooltip_size.y - offs)
+		pos.y = clampf(pos.y, EDGE_MARGIN, maxf(EDGE_MARGIN, size.y - EDGE_MARGIN - tooltip_size.y))
+
+	var rect := Rect2(pos, tooltip_size)
+	draw_rect(rect, Color(0.06, 0.07, 0.09, 0.94), true)
+	draw_rect(rect, Color(0.92, 0.82, 0.45, 0.85), false, 2.0)
+
+	var pen_y := pos.y + pad + float(title_fs)
+	for tl in title_lines:
+		draw_string(
+			font,
+			Vector2(pos.x + pad, pen_y),
+			tl,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			inner_w,
+			title_fs,
+			Color(0.98, 0.96, 0.88)
+		)
+		pen_y += float(title_fs) + line_gap
+	if not detail_lines.is_empty():
+		pen_y += block_gap - line_gap
+	for dl in detail_lines:
+		draw_string(
+			font,
+			Vector2(pos.x + pad, pen_y),
+			dl,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			inner_w,
+			body_fs,
+			Color(0.72, 0.76, 0.82)
+		)
+		pen_y += float(body_fs) + line_gap
+
+
+func _tooltip_detail_lines(entry: Dictionary) -> Array[String]:
+	var out: Array[String] = []
+	var weapon := entry.get("weapon") as WeaponResource
+	if weapon:
+		if weapon.inventory_kind == WeaponResource.InventoryKind.MELEE:
+			out.append("Melee weapon")
+		else:
+			out.append(_weapon_carry_hint(weapon.carry_class))
+			if not weapon.calibers.is_empty():
+				var names: Array[String] = []
+				for cal in weapon.calibers:
+					var c := cal as CaliberResource
+					if c:
+						names.append(c.caliber_name)
+				if not names.is_empty():
+					out.append("Ammo: %s" % ", ".join(names))
+		return out
+
+	var cat := str(entry.get("category", "resource"))
+	out.append(_friendly_item_category(cat))
+	var cal_name := str(entry.get("caliber_name", ""))
+	if cat == "ammo" and not cal_name.is_empty() and cal_name != _get_entry_display_name(entry):
+		out.append(cal_name)
+
+	var cnt := int(entry.get("count", 1))
+	var max_st := int(entry.get("max_stack", 1))
+	if max_st > 1:
+		out.append("Stack: %d / %d" % [cnt, max_st])
+	elif cnt > 1:
+		out.append("×%d" % cnt)
+	return out
+
+
+func _friendly_item_category(cat: String) -> String:
+	match cat:
+		"ammo":
+			return "Ammunition"
+		"food":
+			return "Food"
+		"medicine":
+			return "Medical supplies"
+		"tool":
+			return "Tool"
+		"deployable":
+			return "Deployable"
+		"resource":
+			return "Materials"
+		_:
+			return "Item"
+
+
+func _weapon_carry_hint(carry: WeaponResource.CarryClass) -> String:
+	match carry:
+		WeaponResource.CarryClass.SMALL:
+			return "Compact firearm"
+		WeaponResource.CarryClass.MEDIUM:
+			return "Standard firearm"
+		WeaponResource.CarryClass.LARGE:
+			return "Heavy firearm"
+		WeaponResource.CarryClass.VERY_LARGE:
+			return "Really big gun"
+		WeaponResource.CarryClass.MELEE:
+			return "Melee weapon"
+		_:
+			return "Weapon"

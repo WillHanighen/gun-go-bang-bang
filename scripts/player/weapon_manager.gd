@@ -42,6 +42,7 @@ var _wheel_cursor := Vector2.ZERO
 var _reload_key_held := false
 var _reload_hold_time := 0.0
 var _last_fired_hand: StringName = HAND_1
+var require_inventory_ammo := false
 
 @onready var player: CharacterBody3D = get_parent() as CharacterBody3D
 @onready var inventory: PlayerInventory = player.get_node_or_null("PlayerInventory") as PlayerInventory
@@ -188,6 +189,35 @@ func add_weapon(weapon: WeaponResource, auto_equip: bool = true) -> int:
 	return inventory.add_weapon(weapon, auto_equip)
 
 
+func set_inventory_ammo_required(enabled: bool) -> void:
+	require_inventory_ammo = enabled
+
+
+func serialize_weapon_state() -> Dictionary:
+	for hand in HAND_ORDER:
+		_persist_hand_snapshot(hand)
+	var snapshots := {}
+	for item_id in _item_snapshots.keys():
+		snapshots[str(item_id)] = (_item_snapshots[item_id] as Dictionary).duplicate(true)
+	return {
+		"item_snapshots": snapshots,
+		"require_inventory_ammo": require_inventory_ammo,
+	}
+
+
+func restore_weapon_state(save_data: Dictionary) -> void:
+	_item_snapshots.clear()
+	var snapshots := save_data.get("item_snapshots", {}) as Dictionary
+	for key in snapshots.keys():
+		var item_id := int(str(key))
+		var snapshot: Variant = snapshots[key]
+		if typeof(snapshot) == TYPE_DICTIONARY:
+			_item_snapshots[item_id] = (snapshot as Dictionary).duplicate(true)
+	require_inventory_ammo = bool(save_data.get("require_inventory_ammo", require_inventory_ammo))
+	if inventory:
+		_on_active_loadout_changed(inventory.get_active_loadout())
+
+
 func equip_weapon(index: int) -> void:
 	if not inventory:
 		return
@@ -223,6 +253,8 @@ func start_reload(hand: StringName = HAND_1) -> void:
 	if not weapon or bool(state.get("is_reloading", false)):
 		return
 	if int(state.get("ammo", 0)) >= weapon.magazine_size:
+		return
+	if require_inventory_ammo and _get_reserve_ammo_for_hand(hand) <= 0:
 		return
 	var is_incremental := weapon.per_shell_reload_time > 0.0
 	var reload_time := (
@@ -422,8 +454,9 @@ func _process_reload(delta: float) -> void:
 				_stop_reload_state(hand, state)
 			else:
 				state["reload_incremental"] = true
-				state["ammo"] = mini(int(state.get("ammo", 0)) + 1, weapon.magazine_size)
-				if int(state.get("ammo", 0)) >= weapon.magazine_size:
+				var loaded := _load_rounds_for_hand(hand, 1)
+				state["ammo"] = mini(int(state.get("ammo", 0)) + loaded, weapon.magazine_size)
+				if loaded <= 0 or int(state.get("ammo", 0)) >= weapon.magazine_size:
 					_stop_reload_state(hand, state)
 				else:
 					state["reload_timer"] = weapon.per_shell_reload_time
@@ -432,14 +465,16 @@ func _process_reload(delta: float) -> void:
 			continue
 
 		if bool(state.get("reload_incremental", false)) and weapon.per_shell_reload_time > 0.0:
-			state["ammo"] = mini(int(state.get("ammo", 0)) + 1, weapon.magazine_size)
-			if int(state.get("ammo", 0)) >= weapon.magazine_size:
+			var loaded := _load_rounds_for_hand(hand, 1)
+			state["ammo"] = mini(int(state.get("ammo", 0)) + loaded, weapon.magazine_size)
+			if loaded <= 0 or int(state.get("ammo", 0)) >= weapon.magazine_size:
 				_stop_reload_state(hand, state)
 			else:
 				state["reload_timer"] = weapon.per_shell_reload_time
 		else:
 			_stop_reload_state(hand, state)
-			state["ammo"] = weapon.magazine_size
+			var needed := weapon.magazine_size - int(state.get("ammo", 0))
+			state["ammo"] = mini(int(state.get("ammo", 0)) + _load_rounds_for_hand(hand, needed), weapon.magazine_size)
 
 		_store_hand_state(hand, state)
 		_emit_ammo_refresh_for_hand(hand)
@@ -612,6 +647,9 @@ func _start_caliber_swap_reload(hand: StringName) -> void:
 	var weapon := state.get("weapon") as WeaponResource
 	if not weapon:
 		return
+	if require_inventory_ammo and _get_reserve_ammo_for_hand(hand) <= 0:
+		_emit_ammo_refresh_for_hand(hand)
+		return
 	if weapon.per_shell_reload_time > 0.0:
 		state["ammo"] = 0
 		_store_hand_state(hand, state)
@@ -619,6 +657,24 @@ func _start_caliber_swap_reload(hand: StringName) -> void:
 		_start_reload_timer(hand, weapon.per_shell_reload_time, true)
 		return
 	_start_reload_timer(hand, weapon.reload_time, false)
+
+
+func _load_rounds_for_hand(hand: StringName, requested: int) -> int:
+	if requested <= 0:
+		return 0
+	if not require_inventory_ammo:
+		return requested
+	if not inventory:
+		return 0
+	return inventory.consume_ammo_for_caliber(get_hand_caliber(hand), requested)
+
+
+func _get_reserve_ammo_for_hand(hand: StringName) -> int:
+	if not require_inventory_ammo:
+		return 999999
+	if not inventory:
+		return 0
+	return inventory.get_ammo_count_for_caliber(get_hand_caliber(hand))
 
 
 func _try_cancel_shotgun_reload_for_fire(hand: StringName) -> void:

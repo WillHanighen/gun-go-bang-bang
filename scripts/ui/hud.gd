@@ -11,6 +11,9 @@ var ammo_label: Label
 var fire_mode_label: Label
 var caliber_label: Label
 var hit_info_label: Label
+var vitals_label: Label
+var map_label: Label
+var radio_label: Label
 var controls_label: Label
 var interaction_prompt_label: Label
 var inventory_panel: Control
@@ -20,6 +23,9 @@ var _hit_info_timer: float = 0.0
 
 var _wm: Node
 var _inventory: PlayerInventory
+var _vitals
+var _map_manager: Node
+var _radio_director: Node
 var _volley_dmg := 0.0
 var _volley_hits := 0
 var _volley_dist := 0.0
@@ -57,6 +63,7 @@ func _process(delta: float) -> void:
 			hit_info_label.text = ""
 
 	_update_crosshair()
+	_update_map_readout()
 
 
 func _update_crosshair() -> void:
@@ -176,6 +183,15 @@ func _build_ui() -> void:
 	ammo_label = _make_label(24, Color.WHITE)
 	status_panel.add_child(ammo_label)
 
+	vitals_label = _make_label(14, Color(0.78, 0.9, 1.0))
+	status_panel.add_child(vitals_label)
+
+	map_label = _make_label(12, Color(0.7, 0.95, 0.72))
+	status_panel.add_child(map_label)
+
+	radio_label = _make_label(12, Color(1.0, 0.78, 0.32))
+	status_panel.add_child(radio_label)
+
 	hit_info_label = Label.new()
 	hit_info_label.anchor_left = 0.5
 	hit_info_label.anchor_right = 0.5
@@ -238,6 +254,15 @@ func _connect_signals() -> void:
 	if _inventory and inventory_panel:
 		inventory_panel.call("setup", _inventory)
 
+	_vitals = p.get_node_or_null("PlayerVitals")
+	if _vitals:
+		_vitals.vitals_changed.connect(_on_vitals_changed)
+		_on_vitals_changed(_vitals.get_snapshot())
+	_map_manager = get_tree().get_first_node_in_group("survival_map_manager")
+	_radio_director = get_tree().get_first_node_in_group("survival_radio_director")
+	if _radio_director and _radio_director.has_signal("alert_changed"):
+		_radio_director.connect("alert_changed", Callable(self, "_on_radio_alert_changed"))
+
 	p.interaction_prompt_changed.connect(_on_interaction_prompt_changed)
 	_on_interaction_prompt_changed(p.get_interaction_prompt())
 
@@ -283,6 +308,50 @@ func _on_caliber_changed(_caliber: CaliberResource) -> void:
 
 func _on_loadout_changed(_loadout: Dictionary) -> void:
 	_refresh_loadout()
+
+
+func _on_vitals_changed(snapshot: Dictionary) -> void:
+	if not vitals_label:
+		return
+	var status_bits: Array[String] = []
+	if float(snapshot.get("hunger", 100.0)) < 35.0:
+		status_bits.append("Hungry")
+	if float(snapshot.get("thirst", 100.0)) < 35.0:
+		status_bits.append("Thirsty")
+	if float(snapshot.get("infection", 0.0)) > 1.0:
+		status_bits.append("Infected %.0f%%" % float(snapshot.get("infection", 0.0)))
+	if float(snapshot.get("fatigue", 0.0)) > 65.0:
+		status_bits.append("Tired")
+	for injury in snapshot.get("injuries", []):
+		status_bits.append(str(injury))
+	var status_text := "Status: doing pill-pretty okay"
+	if not status_bits.is_empty():
+		status_text = status_bits[0]
+		for i in range(1, status_bits.size()):
+			status_text += " | %s" % status_bits[i]
+	vitals_label.text = "HP %.0f  STAM %.0f  FOOD %.0f  WATER %.0f\n%s" % [
+		float(snapshot.get("health", 0.0)),
+		float(snapshot.get("stamina", 0.0)),
+		float(snapshot.get("hunger", 0.0)),
+		float(snapshot.get("thirst", 0.0)),
+		status_text,
+	]
+
+
+func _update_map_readout() -> void:
+	if not map_label:
+		return
+	if not _map_manager:
+		_map_manager = get_tree().get_first_node_in_group("survival_map_manager")
+	if _map_manager and _map_manager.has_method("get_minimap_text"):
+		map_label.text = str(_map_manager.call("get_minimap_text"))
+	else:
+		map_label.text = ""
+
+
+func _on_radio_alert_changed(message: String) -> void:
+	if radio_label:
+		radio_label.text = "RADIO: %s" % message
 
 
 func _on_hit_registered(distance: float, damage: float, _target_name: String) -> void:

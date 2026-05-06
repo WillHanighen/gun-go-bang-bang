@@ -32,6 +32,7 @@ const MOVE_SPREAD_WALK_MAX := 1.32
 const MOVE_SPREAD_SPRINT_MAX := 1.52
 const INTERACTION_RAY_LENGTH := 6.0
 const INTERACTION_COLLISION_MASK := 16
+const PlayerVitalsScript := preload("res://scripts/player/player_vitals.gd")
 
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
@@ -40,6 +41,7 @@ const INTERACTION_COLLISION_MASK := 16
 @onready var collision_shape: CollisionShape3D = _resolve_collision_shape()
 
 signal interaction_prompt_changed(prompt: String)
+signal player_died(reason: String)
 
 var is_aiming := false
 var is_sprinting := false
@@ -52,12 +54,14 @@ var _foot_capsule_offset := 0.0
 var _capsule_radius := 0.3
 var _recoil_v_recover := 0.0
 var _recoil_h_recover := 0.0
-var _interaction_target: WeaponPickup
+var _interaction_target: Node
 var _interaction_prompt := ""
+var vitals
 
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	_ensure_vitals()
 	floor_snap_length = 0.25
 	var cap := _get_capsule_shape()
 	if cap:
@@ -67,6 +71,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if vitals and vitals.dead:
+		_set_interaction_target(null)
+		return
 	var inventory_open := inventory != null and inventory.inventory_open
 	is_aiming = (
 		not inventory_open
@@ -96,12 +103,19 @@ func _process(delta: float) -> void:
 	else:
 		_update_interaction_target()
 
-	if not inventory_open and Input.is_action_just_pressed("interact") and _interaction_target:
-		if _interaction_target.pick_up(self):
+	if (
+		not inventory_open
+		and Input.is_action_just_pressed("interact")
+		and _interaction_target
+		and _interaction_target.has_method("pick_up")
+	):
+		if bool(_interaction_target.call("pick_up", self)):
 			_set_interaction_target(null)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if vitals and vitals.dead:
+		return
 	if event.is_action_pressed("toggleInventory") and inventory:
 		if event is InputEventKey and event.is_echo():
 			return
@@ -143,6 +157,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if vitals and vitals.dead:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		velocity += get_gravity() * delta
+		move_and_slide()
+		return
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	var move_dir := (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	var jump_pressed := Input.is_action_just_pressed("jump")
@@ -159,7 +179,10 @@ func _physics_process(delta: float) -> void:
 		and _crouch_progress < 0.2
 		and input_dir.length_squared() > 0.01
 		and Input.is_action_pressed("sprint")
+		and (not vitals or vitals.can_sprint())
 	)
+	if vitals:
+		vitals.update_movement(delta, is_sprinting, input_dir.length())
 	var current_speed := _get_current_speed()
 
 	if on_floor:
@@ -218,6 +241,8 @@ func _apply_air_horizontal_move(delta: float, direction: Vector3, move_speed: fl
 
 
 func apply_recoil(vertical_deg: float, horizontal_deg: float) -> void:
+	if vitals and vitals.dead:
+		return
 	var ads_recoil := lerpf(1.0, ADS_RECOIL_MULT, _ads_progress)
 	var v := vertical_deg * RECOIL_IMPACT_MULT * ads_recoil
 	var h := horizontal_deg * RECOIL_IMPACT_MULT * ads_recoil
@@ -304,6 +329,39 @@ func get_interaction_prompt() -> String:
 	return _interaction_prompt
 
 
+func take_damage(amount: float, _hit_position: Vector3 = global_position, _direction: Vector3 = Vector3.ZERO) -> void:
+	if not vitals:
+		_ensure_vitals()
+	vitals.take_damage(amount, "damage")
+
+
+func apply_infection(amount: float) -> void:
+	if not vitals:
+		_ensure_vitals()
+	vitals.apply_infection(amount)
+
+
+func reset_after_respawn() -> void:
+	if not vitals:
+		_ensure_vitals()
+	vitals.reset_after_respawn(true)
+	velocity = Vector3.ZERO
+
+
+func _ensure_vitals() -> void:
+	vitals = get_node_or_null("PlayerVitals")
+	if not vitals:
+		vitals = PlayerVitalsScript.new()
+		vitals.name = "PlayerVitals"
+		add_child(vitals)
+	if not vitals.died.is_connected(_on_vitals_died):
+		vitals.died.connect(_on_vitals_died)
+
+
+func _on_vitals_died(reason: String) -> void:
+	player_died.emit(reason)
+
+
 func _update_interaction_target() -> void:
 	if not camera:
 		_set_interaction_target(null)
@@ -324,16 +382,26 @@ func _update_interaction_target() -> void:
 		_set_interaction_target(null)
 		return
 
-	var pickup := hit.get("collider") as WeaponPickup
-	if pickup and pickup.can_player_pick_up(origin):
+	var pickup := hit.get("collider") as Node
+	if (
+		pickup
+		and pickup.has_method("can_player_pick_up")
+		and pickup.has_method("pick_up")
+		and pickup.call("can_player_pick_up", origin)
+	):
 		_set_interaction_target(pickup)
 		return
 
 	_set_interaction_target(null)
 
 
-func _set_interaction_target(target: WeaponPickup) -> void:
-	var next_prompt := target.get_prompt_text_for(self) if target else ""
+func _set_interaction_target(target: Node) -> void:
+	var next_prompt := ""
+	if target:
+		if target.has_method("get_prompt_text_for"):
+			next_prompt = str(target.call("get_prompt_text_for", self))
+		elif target.has_method("get_prompt_text"):
+			next_prompt = str(target.call("get_prompt_text"))
 	if _interaction_target == target and _interaction_prompt == next_prompt:
 		return
 

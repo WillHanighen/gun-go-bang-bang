@@ -1,5 +1,7 @@
 extends Control
 
+signal manual_save_requested()
+
 ## When true, opening pause calls `SceneTree.pause`. Set false when multiplayer runs in the same
 ## tree so other players are not frozen; pause UI stays local-only in that case (not wired yet).
 const SOLO_PLAYER_SESSION := true
@@ -15,6 +17,9 @@ const MAIN_MENU_SCENE := "res://scenes/ui/main_menu.tscn"
 var _main_panel: VBoxContainer
 var _settings_panel: Control
 var _settings_visible := false
+var _manual_save_enabled := false
+var _save_button: Button
+var _save_feedback_label: Label
 var _quit_dialog: ConfirmationDialog
 var _bug_dialog: AcceptDialog
 var _froze_scene_tree := false
@@ -57,6 +62,22 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func is_pause_open() -> bool:
 	return visible
+
+
+func set_manual_save_enabled(enabled: bool) -> void:
+	_manual_save_enabled = enabled
+	if _save_button:
+		_save_button.visible = enabled
+	if _save_feedback_label and not enabled:
+		_save_feedback_label.visible = false
+
+
+func show_manual_save_feedback(success: bool, message: String) -> void:
+	if not _save_feedback_label:
+		return
+	_save_feedback_label.text = message
+	_save_feedback_label.modulate = Color(0.7, 1.0, 0.72) if success else Color(1.0, 0.62, 0.52)
+	_save_feedback_label.visible = true
 
 
 func request_pause() -> void:
@@ -103,6 +124,10 @@ func _on_report_bug() -> void:
 		OS.shell_open(BUG_REPORT_URL)
 		return
 	_bug_dialog.popup_centered()
+
+
+func _on_manual_save_pressed() -> void:
+	manual_save_requested.emit()
 
 
 func _on_quit_desktop_pressed() -> void:
@@ -162,6 +187,15 @@ func _build_ui() -> void:
 	_main_panel.add_child(title)
 
 	_main_panel.add_child(_make_button("Resume", request_resume))
+	_save_button = _make_button("Save Survival Run", _on_manual_save_pressed)
+	_save_button.visible = _manual_save_enabled
+	_main_panel.add_child(_save_button)
+
+	_save_feedback_label = Label.new()
+	_save_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_save_feedback_label.visible = false
+	_main_panel.add_child(_save_feedback_label)
+
 	_main_panel.add_child(_make_button("Settings", _show_settings))
 	_main_panel.add_child(_make_button("Report a Bug", _on_report_bug))
 

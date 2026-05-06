@@ -30,6 +30,8 @@ const SLOT_SIZES := {
 	SLOT_MELEE: Vector2i(3, 1),
 	SLOT_BACKPACK: Vector2i(12, 7),
 }
+const ITEM_TYPE_WEAPON := "weapon"
+const ITEM_TYPE_STACK := "stack"
 
 var inventory_open := false
 var active_slot: StringName = SLOT_PRIMARY
@@ -111,6 +113,14 @@ func get_items_in_container(container: StringName) -> Array[Dictionary]:
 	return out
 
 
+func get_total_weight() -> float:
+	var total := 0.0
+	for entry in _items.values():
+		var item := entry as Dictionary
+		total += float(item.get("weight", 0.0)) * maxf(float(item.get("count", 1)), 1.0)
+	return total
+
+
 func is_equipment_slot(slot_name: StringName) -> bool:
 	return slot_name != SLOT_BACKPACK
 
@@ -119,6 +129,10 @@ func has_room_for_weapon(weapon: WeaponResource) -> bool:
 	if not weapon:
 		return false
 	return not _find_auto_placement(weapon).is_empty()
+
+
+func has_room_for_stack(stack_data: Dictionary) -> bool:
+	return not _find_stack_destination(stack_data).is_empty()
 
 
 func add_weapon(weapon: WeaponResource, auto_activate: bool = true) -> int:
@@ -134,10 +148,15 @@ func add_weapon(weapon: WeaponResource, auto_activate: bool = true) -> int:
 	_next_item_id += 1
 	_items[item_id] = {
 		"id": item_id,
+		"item_type": ITEM_TYPE_WEAPON,
+		"display_name": weapon.weapon_name,
 		"weapon": weapon,
 		"container": placement.get("container", SLOT_BACKPACK),
 		"position": placement.get("position", Vector2i.ZERO),
 		"rotated": bool(placement.get("rotated", false)),
+		"count": 1,
+		"max_stack": 1,
+		"weight": _get_default_weapon_weight(weapon),
 	}
 
 	var preferred_slot := StringName(placement.get("container", SLOT_BACKPACK))
@@ -147,6 +166,152 @@ func add_weapon(weapon: WeaponResource, auto_activate: bool = true) -> int:
 	)
 	inventory_changed.emit()
 	return item_id
+
+
+func add_stack(stack_data: Dictionary) -> int:
+	var normalized := _normalize_stack_data(stack_data)
+	if normalized.is_empty():
+		return -1
+
+	var merge_id := _find_merge_stack_id(normalized)
+	if merge_id != -1:
+		var existing := _get_entry(merge_id)
+		existing["count"] = int(existing.get("count", 1)) + int(normalized.get("count", 1))
+		_items[merge_id] = existing
+		inventory_changed.emit()
+		return merge_id
+
+	var placement := _find_stack_destination(normalized)
+	if placement.is_empty():
+		return -1
+
+	var item_id := _next_item_id
+	_next_item_id += 1
+	normalized["id"] = item_id
+	normalized["container"] = placement.get("container", SLOT_BACKPACK)
+	normalized["position"] = placement.get("position", Vector2i.ZERO)
+	normalized["rotated"] = bool(placement.get("rotated", false))
+	_items[item_id] = normalized
+	inventory_changed.emit()
+	return item_id
+
+
+func get_ammo_count_for_caliber(caliber: CaliberResource) -> int:
+	if not caliber:
+		return 0
+	var caliber_name := caliber.caliber_name
+	var total := 0
+	for entry in _items.values():
+		var item := entry as Dictionary
+		if str(item.get("category", "")) != "ammo":
+			continue
+		if str(item.get("caliber_name", "")) != caliber_name:
+			continue
+		total += int(item.get("count", 0))
+	return total
+
+
+func consume_ammo_for_caliber(caliber: CaliberResource, amount: int) -> int:
+	if not caliber or amount <= 0:
+		return 0
+	var caliber_name := caliber.caliber_name
+	var remaining := amount
+	var consumed := 0
+	for item_id in _sorted_item_ids():
+		if remaining <= 0:
+			break
+		var entry := _items[item_id] as Dictionary
+		if str(entry.get("category", "")) != "ammo":
+			continue
+		if str(entry.get("caliber_name", "")) != caliber_name:
+			continue
+		var count := int(entry.get("count", 0))
+		if count <= 0:
+			continue
+		var take := mini(count, remaining)
+		count -= take
+		remaining -= take
+		consumed += take
+		if count <= 0:
+			_items.erase(item_id)
+		else:
+			entry["count"] = count
+			_items[item_id] = entry
+	if consumed > 0:
+		inventory_changed.emit()
+	return consumed
+
+
+func get_stack_count(item_id: String) -> int:
+	var total := 0
+	for entry in _items.values():
+		var item := entry as Dictionary
+		if str(item.get("item_id", "")) == item_id:
+			total += int(item.get("count", 0))
+	return total
+
+
+func consume_stack(item_id: String, amount: int) -> int:
+	if amount <= 0:
+		return 0
+	var remaining := amount
+	var consumed := 0
+	for entry_id in _sorted_item_ids():
+		if remaining <= 0:
+			break
+		var entry := _items[entry_id] as Dictionary
+		if str(entry.get("item_id", "")) != item_id:
+			continue
+		var count := int(entry.get("count", 0))
+		var take := mini(count, remaining)
+		count -= take
+		remaining -= take
+		consumed += take
+		if count <= 0:
+			_items.erase(entry_id)
+		else:
+			entry["count"] = count
+			_items[entry_id] = entry
+	if consumed > 0:
+		inventory_changed.emit()
+	return consumed
+
+
+func serialize_inventory() -> Dictionary:
+	var serialized_items: Array[Dictionary] = []
+	for item_id in _sorted_item_ids():
+		var entry := _items[item_id] as Dictionary
+		serialized_items.append(_serialize_entry(entry))
+	return {
+		"items": serialized_items,
+		"active_slot": String(active_slot),
+		"next_item_id": _next_item_id,
+		"total_weight": get_total_weight(),
+	}
+
+
+func restore_inventory(save_data: Dictionary) -> void:
+	var previous_weapon := get_active_weapon()
+	_items.clear()
+	_next_item_id = maxi(int(save_data.get("next_item_id", 1)), 1)
+	var max_seen_id := 0
+	for raw_entry in save_data.get("items", []):
+		if typeof(raw_entry) != TYPE_DICTIONARY:
+			continue
+		var entry := _deserialize_entry(raw_entry as Dictionary)
+		if entry.is_empty():
+			continue
+		var item_id := int(entry.get("id", -1))
+		if item_id < 0:
+			continue
+		max_seen_id = maxi(max_seen_id, item_id)
+		_items[item_id] = entry
+	_next_item_id = maxi(_next_item_id, max_seen_id + 1)
+	active_slot = StringName(save_data.get("active_slot", SLOT_PRIMARY))
+	if not is_equipment_slot(active_slot):
+		active_slot = SLOT_PRIMARY
+	_refresh_active_selection(previous_weapon)
+	inventory_changed.emit()
 
 
 func move_item(
@@ -161,7 +326,7 @@ func move_item(
 		return false
 
 	var weapon := entry.get("weapon") as WeaponResource
-	if not weapon:
+	if target_container != SLOT_BACKPACK and not weapon:
 		return false
 
 	var previous_weapon := get_active_weapon()
@@ -170,7 +335,7 @@ func move_item(
 		rotated = false
 
 	var normalized_position := _normalize_position(target_container, target_position)
-	if not _can_place_weapon(weapon, target_container, normalized_position, rotated, item_id):
+	if not _can_place_entry_excluding(entry, target_container, normalized_position, rotated, [item_id]):
 		return false
 
 	entry["container"] = target_container
@@ -195,19 +360,19 @@ func can_place_item(
 		return false
 
 	var weapon := entry.get("weapon") as WeaponResource
-	if not weapon:
+	if target_container != SLOT_BACKPACK and not weapon:
 		return false
 
 	var rotated := target_rotated if use_target_rotation else bool(entry.get("rotated", false))
 	if target_container != SLOT_BACKPACK:
 		rotated = false
 
-	return _can_place_weapon(
-		weapon,
+	return _can_place_entry_excluding(
+		entry,
 		target_container,
 		_normalize_position(target_container, target_position),
 		rotated,
-		item_id
+		[item_id]
 	)
 
 
@@ -477,40 +642,16 @@ func _can_place_weapon_excluding(
 	rotated: bool,
 	ignore_item_ids: Array
 ) -> bool:
-	var container_size := get_container_size(container)
-	if container_size == Vector2i.ZERO:
-		return false
-
-	var normalized_position := _normalize_position(container, position)
-	var item_size := _get_weapon_size(weapon, rotated)
-	if normalized_position.x < 0 or normalized_position.y < 0:
-		return false
-	if normalized_position.x + item_size.x > container_size.x:
-		return false
-	if normalized_position.y + item_size.y > container_size.y:
-		return false
-	if is_equipment_slot(container):
-		if not weapon.fits_equipment_slot(container):
-			return false
-		if rotated:
-			return false
-
-	var other_entries := _get_container_entries(container, ignore_item_ids)
-	if is_equipment_slot(container):
-		if other_entries.size() >= _get_equipment_item_limit(container):
-			return false
-		if not _can_share_equipment_container(weapon, other_entries):
-			return false
-
-	for other_entry in other_entries:
-		var other_weapon := other_entry.get("weapon") as WeaponResource
-		if not other_weapon:
-			continue
-		var other_position: Vector2i = other_entry.get("position", Vector2i.ZERO)
-		var other_rotated := bool(other_entry.get("rotated", false))
-		if _rects_overlap(normalized_position, item_size, other_position, _get_weapon_size(other_weapon, other_rotated)):
-			return false
-	return true
+	return _can_place_entry_excluding(
+		{
+			"weapon": weapon,
+			"size": weapon.get_inventory_size() if weapon else Vector2i.ZERO,
+		},
+		container,
+		position,
+		rotated,
+		ignore_item_ids
+	)
 
 
 func _build_swap_plan(
@@ -531,10 +672,12 @@ func _build_swap_plan(
 
 	var item_weapon := item_entry.get("weapon") as WeaponResource
 	var displaced_weapon := displaced_entry.get("weapon") as WeaponResource
-	if not item_weapon or not displaced_weapon:
+	var item_origin_container := StringName(item_entry.get("container", SLOT_BACKPACK))
+	if target_container != SLOT_BACKPACK and not item_weapon:
+		return {}
+	if item_origin_container != SLOT_BACKPACK and not displaced_weapon:
 		return {}
 
-	var item_origin_container := StringName(item_entry.get("container", SLOT_BACKPACK))
 	var item_origin_position: Vector2i = item_entry.get("position", Vector2i.ZERO)
 	var item_origin_rotated := bool(item_entry.get("rotated", false))
 	var resolved_item_rotated := target_rotated if use_target_rotation else item_origin_rotated
@@ -543,8 +686,8 @@ func _build_swap_plan(
 
 	var ignore_item_ids := [item_id, target_item_id]
 	var normalized_target_position := _normalize_position(target_container, target_position)
-	if not _can_place_weapon_excluding(
-		item_weapon,
+	if not _can_place_entry_excluding(
+		item_entry,
 		target_container,
 		normalized_target_position,
 		resolved_item_rotated,
@@ -553,7 +696,7 @@ func _build_swap_plan(
 		return {}
 
 	var displaced_destination := _find_swap_destination_for_item(
-		displaced_weapon,
+		displaced_entry,
 		item_origin_container,
 		item_origin_position,
 		item_origin_rotated,
@@ -579,16 +722,19 @@ func _build_swap_plan(
 
 
 func _find_swap_destination_for_item(
-	weapon: WeaponResource,
+	entry: Dictionary,
 	target_container: StringName,
 	target_position: Vector2i,
 	target_rotated: bool,
 	ignore_item_ids: Array
 ) -> Dictionary:
+	var weapon := entry.get("weapon") as WeaponResource
+	if target_container != SLOT_BACKPACK and not weapon:
+		return {}
 	var resolved_rotated := target_rotated if target_container == SLOT_BACKPACK else false
 	var normalized_target_position := _normalize_position(target_container, target_position)
-	if not _can_place_weapon_excluding(
-		weapon,
+	if not _can_place_entry_excluding(
+		entry,
 		target_container,
 		normalized_target_position,
 		resolved_rotated,
@@ -631,15 +777,218 @@ func get_item_size(item_id: int) -> Vector2i:
 	var entry := _get_entry(item_id)
 	if entry.is_empty():
 		return Vector2i.ZERO
-	var weapon := entry.get("weapon") as WeaponResource
-	if not weapon:
-		return Vector2i.ZERO
-	return _get_weapon_size(weapon, bool(entry.get("rotated", false)))
+	return _get_entry_size(entry, bool(entry.get("rotated", false)))
 
 
 func _get_weapon_size(weapon: WeaponResource, rotated: bool) -> Vector2i:
 	var base_size := weapon.get_inventory_size()
 	return Vector2i(base_size.y, base_size.x) if rotated else base_size
+
+
+func _get_entry_size(entry: Dictionary, rotated: bool) -> Vector2i:
+	var weapon := entry.get("weapon") as WeaponResource
+	if weapon:
+		return _get_weapon_size(weapon, rotated)
+	var base_size: Vector2i = entry.get("size", Vector2i(1, 1))
+	base_size = Vector2i(maxi(base_size.x, 1), maxi(base_size.y, 1))
+	return Vector2i(base_size.y, base_size.x) if rotated else base_size
+
+
+func _can_place_entry_excluding(
+	entry: Dictionary,
+	container: StringName,
+	position: Vector2i,
+	rotated: bool,
+	ignore_item_ids: Array
+) -> bool:
+	var container_size := get_container_size(container)
+	if container_size == Vector2i.ZERO:
+		return false
+
+	var weapon := entry.get("weapon") as WeaponResource
+	if is_equipment_slot(container):
+		if not weapon or not weapon.fits_equipment_slot(container):
+			return false
+		if rotated:
+			return false
+
+	var normalized_position := _normalize_position(container, position)
+	var item_size := _get_entry_size(entry, rotated)
+	if normalized_position.x < 0 or normalized_position.y < 0:
+		return false
+	if normalized_position.x + item_size.x > container_size.x:
+		return false
+	if normalized_position.y + item_size.y > container_size.y:
+		return false
+
+	var other_entries := _get_container_entries(container, ignore_item_ids)
+	if is_equipment_slot(container):
+		if other_entries.size() >= _get_equipment_item_limit(container):
+			return false
+		if not _can_share_equipment_container(weapon, other_entries):
+			return false
+
+	for other_entry in other_entries:
+		var other_position: Vector2i = other_entry.get("position", Vector2i.ZERO)
+		var other_rotated := bool(other_entry.get("rotated", false))
+		if _rects_overlap(normalized_position, item_size, other_position, _get_entry_size(other_entry, other_rotated)):
+			return false
+	return true
+
+
+func _find_stack_destination(stack_data: Dictionary) -> Dictionary:
+	var normalized := _normalize_stack_data(stack_data)
+	if normalized.is_empty():
+		return {}
+
+	var merge_id := _find_merge_stack_id(normalized)
+	if merge_id != -1:
+		return {"container": SLOT_BACKPACK, "merge_item_id": merge_id}
+
+	for y in range(get_container_size(SLOT_BACKPACK).y - _get_entry_size(normalized, false).y + 1):
+		for x in range(get_container_size(SLOT_BACKPACK).x - _get_entry_size(normalized, false).x + 1):
+			var candidate := Vector2i(x, y)
+			if _can_place_entry_excluding(normalized, SLOT_BACKPACK, candidate, false, []):
+				return {"container": SLOT_BACKPACK, "position": candidate, "rotated": false}
+	return {}
+
+
+func _find_merge_stack_id(stack_data: Dictionary) -> int:
+	var stack_key := _get_stack_key(stack_data)
+	var add_count := int(stack_data.get("count", 1))
+	for item_id in _sorted_item_ids():
+		var entry := _items[item_id] as Dictionary
+		if str(entry.get("item_type", "")) != ITEM_TYPE_STACK:
+			continue
+		if _get_stack_key(entry) != stack_key:
+			continue
+		var count := int(entry.get("count", 1))
+		var max_stack := int(entry.get("max_stack", 1))
+		if count + add_count <= max_stack:
+			return item_id
+	return -1
+
+
+func _get_stack_key(entry: Dictionary) -> String:
+	return "%s|%s|%s" % [
+		str(entry.get("category", "")),
+		str(entry.get("item_id", "")),
+		str(entry.get("caliber_name", "")),
+	]
+
+
+func _normalize_stack_data(stack_data: Dictionary) -> Dictionary:
+	var item_id := str(stack_data.get("item_id", ""))
+	var category := str(stack_data.get("category", "resource"))
+	var caliber_name := str(stack_data.get("caliber_name", ""))
+	if item_id.is_empty():
+		item_id = "ammo:%s" % caliber_name if category == "ammo" and not caliber_name.is_empty() else category
+	var count := maxi(int(stack_data.get("count", 1)), 1)
+	var max_stack := maxi(int(stack_data.get("max_stack", 50)), 1)
+	if count > max_stack:
+		max_stack = count
+	var size: Vector2i = stack_data.get("size", Vector2i(1, 1))
+	return {
+		"item_type": ITEM_TYPE_STACK,
+		"item_id": item_id,
+		"display_name": str(stack_data.get("display_name", item_id)),
+		"category": category,
+		"count": count,
+		"max_stack": max_stack,
+		"weight": maxf(float(stack_data.get("weight", 0.1)), 0.0),
+		"size": Vector2i(maxi(size.x, 1), maxi(size.y, 1)),
+		"caliber_name": caliber_name,
+	}
+
+
+func _serialize_entry(entry: Dictionary) -> Dictionary:
+	var weapon := entry.get("weapon") as WeaponResource
+	var serialized := {
+		"id": int(entry.get("id", -1)),
+		"item_type": str(entry.get("item_type", ITEM_TYPE_WEAPON if weapon else ITEM_TYPE_STACK)),
+		"display_name": str(entry.get("display_name", _get_entry_display_name(entry))),
+		"container": String(entry.get("container", SLOT_BACKPACK)),
+		"position": _vector2i_to_array(entry.get("position", Vector2i.ZERO)),
+		"rotated": bool(entry.get("rotated", false)),
+		"count": int(entry.get("count", 1)),
+		"max_stack": int(entry.get("max_stack", 1)),
+		"weight": float(entry.get("weight", 0.0)),
+		"size": _vector2i_to_array(_get_entry_size(entry, false)),
+		"category": str(entry.get("category", "")),
+		"item_id": str(entry.get("item_id", "")),
+		"caliber_name": str(entry.get("caliber_name", "")),
+	}
+	if weapon:
+		serialized["weapon_name"] = weapon.weapon_name
+	return serialized
+
+
+func _deserialize_entry(raw_entry: Dictionary) -> Dictionary:
+	var item_type := str(raw_entry.get("item_type", ITEM_TYPE_WEAPON))
+	var weapon: WeaponResource = null
+	if raw_entry.has("weapon_name"):
+		weapon = WeaponDatabase.get_weapon_by_name(str(raw_entry.get("weapon_name", "")))
+	if item_type == ITEM_TYPE_WEAPON and not weapon:
+		return {}
+
+	var entry := {
+		"id": int(raw_entry.get("id", -1)),
+		"item_type": item_type,
+		"display_name": str(raw_entry.get("display_name", "")),
+		"container": StringName(raw_entry.get("container", SLOT_BACKPACK)),
+		"position": _array_to_vector2i(raw_entry.get("position", [0, 0])),
+		"rotated": bool(raw_entry.get("rotated", false)),
+		"count": int(raw_entry.get("count", 1)),
+		"max_stack": int(raw_entry.get("max_stack", 1)),
+		"weight": float(raw_entry.get("weight", 0.0)),
+		"size": _array_to_vector2i(raw_entry.get("size", [1, 1])),
+		"category": str(raw_entry.get("category", "")),
+		"item_id": str(raw_entry.get("item_id", "")),
+		"caliber_name": str(raw_entry.get("caliber_name", "")),
+	}
+	if weapon:
+		entry["weapon"] = weapon
+		entry["display_name"] = weapon.weapon_name
+	return entry
+
+
+func _get_entry_display_name(entry: Dictionary) -> String:
+	var weapon := entry.get("weapon") as WeaponResource
+	if weapon:
+		return weapon.weapon_name
+	var display_name := str(entry.get("display_name", ""))
+	if not display_name.is_empty():
+		return display_name
+	return str(entry.get("item_id", "Item"))
+
+
+func _get_default_weapon_weight(weapon: WeaponResource) -> float:
+	match weapon.carry_class:
+		WeaponResource.CarryClass.SMALL:
+			return 1.1
+		WeaponResource.CarryClass.MEDIUM:
+			return 2.6
+		WeaponResource.CarryClass.LARGE:
+			return 4.2
+		WeaponResource.CarryClass.VERY_LARGE:
+			return 6.0
+		WeaponResource.CarryClass.MELEE:
+			return 1.8
+		_:
+			return 2.0
+
+
+func _vector2i_to_array(value: Vector2i) -> Array:
+	return [value.x, value.y]
+
+
+func _array_to_vector2i(value) -> Vector2i:
+	if typeof(value) != TYPE_ARRAY:
+		return Vector2i.ZERO
+	var parts := value as Array
+	if parts.size() < 2:
+		return Vector2i.ZERO
+	return Vector2i(int(parts[0]), int(parts[1]))
 
 
 func _get_entry(item_id: int) -> Dictionary:
